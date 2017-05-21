@@ -14,13 +14,14 @@ Notes:
 * Text Wanderer is a quick port to a text based version to prove the old code would compile and work.
 * Retro Wanderer is the sprite graphics based version.
 * Compiled with Xcode 8.3.2 for iPad iOS 10.3 and above only - this was just the easiest to get going.
+* I had to make one fix to the game engine so that the baby monsters would not go out of bounds. The screens all seem to work still!
 
 -Andrew Wallace
 
 App Store Description
 =====================
 Welcome to Retro Wanderer!  Wanderer is an old PC puzzle game similar to Boulderdash, Repton, XOR and others. This is port of the original game from the original code.
-All 60 screens are available with shiny new graphics, game center support and game controller support.  Each screen is a separate puzzle to solve, nother is random and the game can save your moves for a replay.
+All 60 screens are available with shiny new graphics, game center support and game controller support.  Each screen is a separate puzzle to solve, nothing is random and the game can save your moves for a replay.
 
 No monsters were harmed while developing this game.
 
