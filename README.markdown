@@ -2,21 +2,29 @@
 Retro Wanderer
 ==============
 
-Wanderer is an old DOS / Linux game that I loved, and so ported to the iPad so 
-I could complete it again.
+Wanderer is an old open source DOS / Linux game that I loved, I played when I was a graduate student in 1991.  I had to port it to the iPad so 
+I could play it again.  I'm hoping other people will love it.
 
-It was originally a curses based text game, but I gave updated it with emoji and
-a little drawing there and there.
+It was originally a curses based text game, but I updated it with emoji, and a little bit of drawing to make the rock look better.  I used the sprite kit 
+to animate it. It is Game Center enabled and works very will with a game controller.
 
 This is offered under the GPL.
 
 Notes:
-* Text Wanderer is my original text based version to prove the old code would compile and work.
+* Text Wanderer is a quick port to a text based version to prove the old code would compile and work.
 * Retro Wanderer is the sprite graphics based version.
 * Compiled with Xcode 8.3.2 for iPad iOS 10.3 and above only - this was just the easiest to get going.
 
 -Andrew Wallace
 
+App Store Description
+=====================
+Welcome to Retro Wanderer!  Wanderer is an old PC puzzle game similar to Boulderdash, Repton, XOR and others. This is port of the original game from the original code.
+All 60 screens are available with shiny new graphics, game center support and game controller support.  Each screen is a separate puzzle to solve, nother is random and the game can save your moves for a replay.
+
+No monsters were harmed while developing this game.
+
+(This is open source - see https://github.com/teleportaloo/RetroWanderer )
 
 Original WANDERER CREDITS
 =========================
@@ -76,9 +84,8 @@ and Mark Sunnucks. In screen development were the following:
 |Screen  49        |Paul White          |( white@pdnag1.uucp           )|
 |Screens 54,52,46,47|Hugo Wouters       |( hugo@cs.kuleuven.ac.be      )|
 |Screen  57        |Danny Young         |( danny@iconsys.uucp          )|
-|Screens 58,59     |Ronald Lamprecht    | ( v61%dhdurz1.bitnet@cunyvm.cuny.edu )|
-|Screens 30,60     |I cant remember. If either of these is yours, please
-post to the net to let everyone know who is to blame!| |
+|Screens 58,59     |Ronald Lamprecht    |( v61%dhdurz1.bitnet@cunyvm.cuny.edu )|
+|Screens 30,60     |I cant remember. If either of these is yours, please post to the net to let everyone know who is to blame!| |
 
 
 All of these screens are possible with the current version of Wanderer (3.0).
@@ -111,6 +118,5 @@ give everyone leave to hack about with the sources and make extensions,
 modifications or bugfixes and post to the net. As long as the credits
 remain (I must have a *bit* of fame :-) I'll be satisfied. Happy wandering...
 
-2017:  Andy Wallace has done the iOS port for the iPad, and added screen 0.
 
 - THE END -
