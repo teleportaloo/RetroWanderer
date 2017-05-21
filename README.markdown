@@ -1,3 +1,7 @@
+
+Retro Wanderer
+==============
+
 Wanderer is an old DOS / Linux game that I loved, and so ported to the iPad so 
 I could complete it again.
 
@@ -11,12 +15,11 @@ Notes:
 * Retro Wanderer is the sprite graphics based version.
 * Compiled with Xcode 8.3.2 for iPad iOS 10.3 and above only - this was just the easiest to get going.
 
+-Andrew Wallace
 
-Here are the original credits:
 
-
-WANDERER CREDITS
-================
+Original WANDERER CREDITS
+=========================
 
 This file should always be available to all players of the game. Feel free to
 add anything necessary, eg, if you create some new screens, but don't *delete*
@@ -46,41 +49,37 @@ addition of the balloons.
 Assisting in the development were Rob McMahon (our systems manager)
 and Mark Sunnucks. In screen development were the following:
 
-Screen  0       Andrew Wallace
-Screens 1,2,3,4,7,8,10,12,16,23,24,26
-Steven Shipway          ( maujp@uk.ac.warwick.cu      )
-Screens 5,6     James Beckett           ( csutg@uk.ac.warwick.cu      )
-Screen  9,27,29 Kenton Oatley           ( maukr@uk.ac.warwick.cu      )
-Screens 11,13,14,19,20
-Nameless                ( play@nl.cwi                 )
-Screen  17      David                   ( david@ist.co.uk             )
-Screens 15,18,41,42
-Bruce Butterfield & Son ( bruce@au.oz.utas.tasis      )
-Screens 21,22   Max Rockatansky         ( jn@uk.ac.ukc                )
-Screen  25      Will Bent               ( whb@hoh-2.ATT.COM           )
-Screen  28      Frans Meulenbrooks      ( meulenbr@nl.philips.prl.cst )
-Screen  31      Alan Bland              ( mab@druwy.uucp              )
-Screen  32      Ed Strong               ( ems%nanotech@edu.princeton  )
-Screen  33,35   Mark Maplethorpe        ( csttrjs@uk.ac.warwick.cu    )
-Screen  34,53   David Goodenough        ( dg@pallio.uucp              )
-Screen  36      Kevin Pickard           ( kevin%perle@uucp.uunet      )
-Screens 37,38,39
-Paul Metcalf            ( maukw@uk.ac.warwick.cu      )
-Screen  40,50,51
-Bill Martin             ( wjmartiniii@edu.waterloo.violet )
-Screen  43      Bryan Ewbank            ( bdewbank@ixlpo.uucp         )
-Screens 44,55,56
-Hans Bodlaender         ( hansb@ruuinf.uucp           )
-Screen  45      Mark Sergent            ( ai3!mark@artecon.uucp       )
-Screens 48      Kevin O'Donnell         ( kjo@uk.ac.ukc               )
-Tony Newell             ( adn@uk.ac.ukc               )
-Screen  49      Paul White              ( white@pdnag1.uucp           )
-Screens 54,52,46,47
-Hugo Wouters            ( hugo@cs.kuleuven.ac.be      )
-Screen  57      Danny Young             ( danny@iconsys.uucp          )
-Screens 58,59   Ronald Lamprecht        ( v61%dhdurz1.bitnet@cunyvm.cuny.edu )
-Screens 30,60   I cant remember. If either of these is yours, please
-post to the net to let everyone know who is to blame!
+|Screens           | Author             | email                        |
+|------------------|--------------------|------------------------------|
+|Screen  0         |Andrew Wallace      |                              |
+|Screens 1,2,3,4,7,8,10,12,16,23,24,26|Steven Shipway|( maujp@uk.ac.warwick.cu)|
+|Screens 5,6       |James Beckett       |( csutg@uk.ac.warwick.cu)|
+|Screen  9,27,29   |Kenton Oatley       |( maukr@uk.ac.warwick.cu)|
+|Screens 11,13,14,19,20 |Nameless       |( play@nl.cwi)|
+|Screen  17        |David               |( david@ist.co.uk)|
+|Screens 15,18,41,42|Bruce Butterfield & Son|( bruce@au.oz.utas.tasis)|
+|Screens 21,22     |Max Rockatansky     |(jn@uk.ac.ukc)|
+|Screen  25        |Will Bent           |( whb@hoh-2.ATT.COM           )|
+|Screen  28        |Frans Meulenbrooks  |( meulenbr@nl.philips.prl.cst )|
+|Screen  31        |Alan Bland          |( mab@druwy.uucp              )|
+|Screen  32        |Ed Strong           |( ems%nanotech@edu.princeton  )|
+|Screen  33,35     |Mark Maplethorpe    |( csttrjs@uk.ac.warwick.cu    )|
+|Screen  34,53     |David Goodenough    |( dg@pallio.uucp              )|
+|Screen  36        |Kevin Pickard       |( kevin%perle@uucp.uunet      )|
+|Screens 37,38,39  |Paul Metcalf        |( maukw@uk.ac.warwick.cu      )|
+|Screen  40,50,51  |Bill Martin         |( wjmartiniii@edu.waterloo.violet )|
+|Screen  43        |Bryan Ewbank        |( bdewbank@ixlpo.uucp         )|
+|Screens 44,55,56  |Hans Bodlaender     |( hansb@ruuinf.uucp           )|
+|Screen  45        |Mark Sergent        |( ai3!mark@artecon.uucp       )|
+|Screens 48        |Kevin O'Donnell     |( kjo@uk.ac.ukc               )|
+|                  |Tony Newell         |( adn@uk.ac.ukc               )|
+|Screen  49        |Paul White          |( white@pdnag1.uucp           )|
+|Screens 54,52,46,47|Hugo Wouters       |( hugo@cs.kuleuven.ac.be      )|
+|Screen  57        |Danny Young         |( danny@iconsys.uucp          )|
+|Screens 58,59     |Ronald Lamprecht    | ( v61%dhdurz1.bitnet@cunyvm.cuny.edu )|
+|Screens 30,60     |I cant remember. If either of these is yours, please
+post to the net to let everyone know who is to blame!| |
+
 
 All of these screens are possible with the current version of Wanderer (3.0).
 
