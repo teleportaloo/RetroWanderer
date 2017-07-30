@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>5screens</key>
+	<integer>5</integer>
+	<key>10screens</key>
+	<integer>10</integer>
+	<key>15screens</key>
+	<integer>15</integer>
+	<key>20screens</key>
+	<integer>20</integer>
+	<key>30screens</key>
+	<integer>30</integer>
+	<key>40screens</key>
+	<integer>40</integer>
+	<key>50screens</key>
+	<integer>50</integer>
+	<key>61screens</key>
+	<integer>61</integer>
+</dict>
+</plist>

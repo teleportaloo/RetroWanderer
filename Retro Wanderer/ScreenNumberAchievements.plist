@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>screen0</key>
+	<integer>0</integer>
+	<key>screen1</key>
+	<integer>1</integer>
+	<key>screen2</key>
+	<integer>2</integer>
+	<key>screen4</key>
+	<integer>4</integer>
+	<key>screen10</key>
+	<integer>10</integer>
+	<key>screen11</key>
+	<integer>11</integer>
+	<key>screen14</key>
+	<integer>14</integer>
+	<key>screen23</key>
+	<integer>23</integer>
+	<key>screen24</key>
+	<integer>24</integer>
+	<key>screen26</key>
+	<integer>26</integer>
+	<key>screen31</key>
+	<integer>31</integer>
+	<key>screen34</key>
+	<integer>34</integer>
+	<key>screen35</key>
+	<integer>35</integer>
+	<key>screen37</key>
+	<integer>37</integer>
+	<key>screen39</key>
+	<integer>39</integer>
+	<key>screen41</key>
+	<integer>41</integer>
+	<key>screen44</key>
+	<integer>44</integer>
+	<key>screen46</key>
+	<integer>46</integer>
+	<key>screen49</key>
+	<integer>49</integer>
+	<key>screen51</key>
+	<integer>51</integer>
+	<key>screen53</key>
+	<integer>53</integer>
+	<key>screen56</key>
+	<integer>56</integer>
+	<key>screen60</key>
+	<integer>60</integer>
+</dict>
+</plist>

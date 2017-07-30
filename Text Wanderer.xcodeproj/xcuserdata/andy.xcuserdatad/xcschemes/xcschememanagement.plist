@@ -4,6 +4,21 @@
 <dict>
 	<key>SchemeUserState</key>
 	<dict>
+		<key>Retro Wanderer 2.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>2</integer>
+		</dict>
+		<key>Retro Wanderer Release.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>2</integer>
+		</dict>
+		<key>Retro Wanderer.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>1</integer>
+		</dict>
 		<key>Text Wanderer.xcscheme</key>
 		<dict>
 			<key>orderHint</key>
@@ -13,6 +28,16 @@
 	<key>SuppressBuildableAutocreation</key>
 	<dict>
 		<key>A14AD18D1EB58DB200531527</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>A1C4E7351EBC3D7100326F78</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>A1C4E7571EBC570A00326F78</key>
 		<dict>
 			<key>primary</key>
 			<true/>

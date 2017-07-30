@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>show_help</key>
+	<true/>
+	<key>sounds</key>
+	<true/>
+	<key>game_center</key>
+	<true/>
+	<key>start_playback_speed</key>
+	<integer>1</integer>
+	<key>rapid_fire_duration</key>
+	<real>0.1</real>
+	<key>current_level</key>
+	<integer>0</integer>
+	<key>animation_duration</key>
+	<real>0.05</real>
+	<key>retro</key>
+	<false/>
+	<key>left_handed</key>
+	<false/>
+</dict>
+</plist>
