@@ -17,9 +17,16 @@ Notes:
 * I had to make one fix to the game engine so that the baby monsters would not go out of bounds. The screens all seem to work still!
 
 Facebook:  http://www.facebook.com/RetroWanderer
+
 Twitter:   http://www.twitter.com/RetroWanderer
 
+Steve Shipway's site: 'http://www.steveshipway.org/software/
+
+GitHub site for this port:  https://github.com/teleportaloo/RetroWanderer
+
+
 -Andrew Wallace
+
 
 App Store Description
 =====================
