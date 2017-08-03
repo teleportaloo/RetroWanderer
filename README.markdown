@@ -16,6 +16,8 @@ Notes:
 * Compiled with Xcode 8.3.2 for iPad iOS 10.3 and above only - this was just the easiest to get going.
 * I had to make one fix to the game engine so that the baby monsters would not go out of bounds. The screens all seem to work still!
 
+US App Store: https://appsto.re/us/xnr2jb.i
+
 Facebook:  http://www.facebook.com/RetroWanderer
 
 Twitter:   http://www.twitter.com/RetroWanderer
