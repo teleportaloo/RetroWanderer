@@ -22,7 +22,7 @@ Facebook:  http://www.facebook.com/RetroWanderer
 
 Twitter:   http://www.twitter.com/RetroWanderer
 
-Steve Shipway's site: 'http://www.steveshipway.org/software/
+Steve Shipway's site: http://www.steveshipway.org/software/
 
 GitHub site for this port:  https://github.com/teleportaloo/RetroWanderer
 
