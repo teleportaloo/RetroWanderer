@@ -21,11 +21,13 @@
 
 @interface HelpScreen : UITableViewController
 
-@property (nonatomic, retain) NSArray *rowsInOrder;
-@property (nonatomic, retain) NSDictionary *textForCharacter;
-@property (nonatomic, retain) NSDictionary *links;
-@property (nonatomic, retain) NSDictionary *linkText;
-@property (nonatomic, retain) NSDictionary *linkImages;
+@property (nonatomic, retain) NSArray<NSString *> *rowsInOrder;
+@property (nonatomic, retain) NSDictionary<NSString *, NSString *> *textForCharacter;
+@property (nonatomic, retain) NSDictionary<NSString *, NSString *> *links;
+@property (nonatomic, retain) NSDictionary<NSString *, NSString *> *linkText;
+@property (nonatomic, retain) NSDictionary<NSString *, NSString *> *linkImages;
+@property (nonatomic, retain) NSDictionary<NSString *, NSString *> *titles;
+@property (nonatomic, retain) NSMutableArray<NSNumber *> *sectionStart;
 
 
 @end

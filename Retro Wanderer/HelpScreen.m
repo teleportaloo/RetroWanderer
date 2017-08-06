@@ -280,16 +280,21 @@
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wobjc-string-concatenation"
     
-    self.rowsInOrder = @[@"#bW A N D E R E R#b\n"
-                         @"Originally by #BSteven Shipway#0\n"
+    self.sectionStart = [NSMutableArray array];
+    
+    self.rowsInOrder = @[@"title0",
+                         @"link4",
                          @"#iiOS port by #BAndrew Wallace#B#i",
+                         @"title1",
                          @"*", @"X", @"@", @"#", @"C", @":", @"T", @"=", @"|", @"O", @"<", @">", @"+", @"S", @"!", @"/", @"\\", @"M", @"^",
                          @"Touch #B#bSave checkpoint#b#0 to save where you are, then #B#bStart playback#b#0 to play it back again. Each screen is saved separately.",
                          @"The game will remember the moves for each screen you finish.",
                          @"Use a game controller! Buttons and dialog options are mapped to buttons on the controller too.",
-                         @"link0",
+                         @"title2",
                          @"link2",
-                         @"link3" ];
+                         @"link3",
+                         @"link0"
+                         ];
 #pragma clang diagnostic pop
     
     self.textForCharacter = @{@"*" : @"Collect all the treasure...",
@@ -314,20 +319,37 @@
     
     self.links = @{@"link0" : @"https://github.com/teleportaloo/RetroWanderer",
                    @"link2" : @"@tweet",
-                   @"link3" : @"@facebook"};
+                   @"link3" : @"@facebook",
+                   @"link4" : @"https://github.com/teleportaloo/RetroWanderer/blob/github1.0/README.markdown"
+                   };
     
-    self.linkText = @{@"link0" : @"Source and Credits",
+    self.linkText = @{@"link0" : [NSString stringWithFormat:@"Version %@ source code & credits", [NSBundle mainBundle].infoDictionary[@"CFBundleVersion"]],
                       @"link2" : @"Twitter",
-                      @"link3" : @"Facebook"
+                      @"link3" : @"Facebook",
+                      @"link4" : @"Original by #BSteven Shipway#0, screens developed by many others"
                       };
     
     self.linkImages = @{
                       @"link2" : @"Twitter.png",
-                      @"link3" : @"Facebook.png"
+                      @"link3" : @"Facebook.png",
+                      @"link0" : @"github.png"
                       };
     
     
+    self.titles = @{
+                    @"title0" : @"#iRetro#i #bW A N D E R E R#b",
+                    @"title1" : @"Instructions",
+                    @"title2" : @"Links"
+                    };
     
+
+    for (int i=0; i<self.rowsInOrder.count; i++)
+    {
+        if (self.titles[self.rowsInOrder[i]]!=nil)
+        {
+            [self.sectionStart addObject:@(i)];
+        }
+    }
 }
 
 - (void)didReceiveMemoryWarning {
@@ -339,12 +361,22 @@
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
 
-    return 1;
+    return self.sectionStart.count;
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
 
-    return self.rowsInOrder.count;
+    if (section+1 < self.sectionStart.count)
+    {
+        return self.sectionStart[section+1].integerValue - self.sectionStart[section].integerValue - 1;
+    }
+    
+    return self.rowsInOrder.count - self.sectionStart[section].integerValue - 1;
+}
+
+- (NSInteger)indexForPath:(NSIndexPath *)indexPath
+{
+    return indexPath.row +  self.sectionStart[indexPath.section].integerValue + 1;
 }
 
 
@@ -355,12 +387,11 @@
         cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"1"];
     }
     
-    NSString *maybeCharacter = self.rowsInOrder[indexPath.row];
+    NSString *maybeCharacter = self.rowsInOrder[[self indexForPath:indexPath]];
     NSString *textForCharacter = self.textForCharacter[maybeCharacter];
     NSString *maybeLink  = self.links[maybeCharacter];
     NSString *linkText   = self.linkText[maybeCharacter];
     NSString *linkImage   = self.linkImages[maybeCharacter];
-    
     
     NSString *stringToFormat = maybeCharacter;
     
@@ -372,7 +403,7 @@
     {
         stringToFormat = linkText;
     }
-    
+
     
     cell.textLabel.attributedText = [self formatAttributedString:stringToFormat regularFont:[UIFont systemFontOfSize:18]];
     cell.textLabel.numberOfLines = 0;
@@ -405,6 +436,11 @@
         cell.accessoryType = UITableViewCellAccessoryNone;
         cell.selectionStyle = UITableViewCellSelectionStyleNone;
     }
+    
+
+    cell.textLabel.textAlignment = NSTextAlignmentLeft;
+    
+    
     if (linkImage)
     {
         NSString *path = [[NSBundle mainBundle] pathForResource:linkImage ofType:nil];
@@ -416,9 +452,34 @@
     return cell;
 }
 
+-(UIView *)tableView:(UITableView *)tableView viewForHeaderInSection:(NSInteger)section
+{
+    UIView *view = [[UIView alloc] initWithFrame:CGRectMake(0, 0, tableView.frame.size.width, 18)];
+    /* Create custom view to display section header... */
+    UILabel *label = [[UILabel alloc] initWithFrame:CGRectMake(10, 5, tableView.frame.size.width, 18)];
+    [label setFont:[UIFont systemFontOfSize:18]];
+    
+    /* Section header is in 0th index... */
+    
+    label.attributedText = [self formatAttributedString:self.titles[self.rowsInOrder[self.sectionStart[section].integerValue]]
+                                            regularFont:[UIFont systemFontOfSize:18]];
+    label.numberOfLines = 0;
+    label.textAlignment = NSTextAlignmentCenter;
+    [view addSubview:label];
+    [view setBackgroundColor:[UIColor grayColor]]; //your background color...
+    return view;
+}
+
+
+- (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section
+{
+    return self.titles[self.rowsInOrder[self.sectionStart[section].integerValue]];
+}
+
+
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    NSString *maybeCharacter = self.rowsInOrder[indexPath.row];
+    NSString *maybeCharacter = self.rowsInOrder[[self indexForPath:indexPath]];
     NSString *maybeLink  = self.links[maybeCharacter];
     
     if ([maybeLink characterAtIndex:0]=='@')
@@ -436,8 +497,7 @@
         }
 
     }
-    else
-    if (maybeLink!=nil)
+    else if (maybeLink!=nil)
     {
         [self openURL:maybeLink];
     }

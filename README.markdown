@@ -22,13 +22,12 @@ Facebook:  http://www.facebook.com/RetroWanderer
 
 Twitter:   http://www.twitter.com/RetroWanderer
 
-Steve Shipway's site: http://www.steveshipway.org/software/
+Steve Shipway's site:   http://www.steveshipway.org/software/
 
 GitHub site for this port:  https://github.com/teleportaloo/RetroWanderer
 
 
 -Andrew Wallace
-
 
 App Store Description
 =====================
@@ -38,6 +37,11 @@ All 60 screens are available with shiny new graphics, game center support and ga
 No monsters were harmed while developing this game.
 
 (This is open source - see https://github.com/teleportaloo/RetroWanderer )
+
+
+Versions:
+- 1.0 First version
+- 1.1 Added donate button, fixed zero score issue and settings.
 
 Original WANDERER CREDITS
 =========================
@@ -132,4 +136,14 @@ modifications or bugfixes and post to the net. As long as the credits
 remain (I must have a *bit* of fame :-) I'll be satisfied. Happy wandering...
 
 
-- THE END -
+THE END
+
+
+Other Credits
+=============
+
+In app settings git is BSD 2-clause licensed and so compatible with GPL:
+
+Luc Vandal, Edovia Inc., http://www.edovia.com
+Ortwin Gentz, FutureTap GmbH, http://www.futuretap.com
+

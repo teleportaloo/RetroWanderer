@@ -23,6 +23,7 @@
 #import "SpriteDisplay.h"
 #import "SpriteDisplay.h"
 #import <GameController/GameController.h>
+#import <StoreKit/StoreKit.h>
 
 #define kMaxScreen 60
 #define kFinalScreen 61
@@ -50,7 +51,7 @@ enum PlaybackState
     PlaybackDone
 };
 
-@interface GameViewController : UIViewController <SpriteDisplayDelegate>
+@interface GameViewController : UIViewController <SpriteDisplayDelegate, SKProductsRequestDelegate, SKPaymentTransactionObserver>
 {
     long _screen_score;
     long _total_score;
@@ -62,9 +63,11 @@ enum PlaybackState
     int _playbackPosition;
     int _startPlaybackSpeed;
     bool _gameCenter;
+    bool _donated;
     bool _initialRapidFire;
     CGRect _gameRect;
 }
+
 
 @property (nonatomic, strong) GCController *controller;
 @property (atomic) NextAction nextAction;
@@ -83,6 +86,7 @@ enum PlaybackState
 @property (nonatomic) NSMutableDictionary<NSString *, AlertBlock>* alertActionMap;
 @property (nonatomic) NSMutableDictionary<NSString *, ButtonAction>* buttonActionMap;
 @property (strong, nonatomic) IBOutlet UIButton *startOverButton;
+@property (strong, nonatomic) IBOutlet UIButton *settingsButton;
 @property (strong, nonatomic) IBOutlet UILabel *achievementLabel;
 @property (strong, nonatomic) IBOutlet UILabel *nameLabel;
 @property (strong, nonatomic) IBOutlet UILabel *scoreLabel;
@@ -112,8 +116,10 @@ enum PlaybackState
 @property (strong, nonatomic) IBOutlet UIButton *highScoresButton;
 @property (strong, nonatomic) IBOutlet UIButton *achievementsButton;
 @property (strong, nonatomic) IBOutlet UILabel *animatingLabel;
+@property (strong, nonatomic) IBOutlet UIButton *donateButton;
+@property (strong, nonatomic) IBOutlet UILabel *thanksLabel;
 
-
+- (IBAction)donate:(id)sender;
 - (IBAction)saveCheckpoint:(id)sender;
 - (IBAction)playbackPressed:(id)sender;
 - (IBAction)controlButtonUp:(id)sender;
@@ -140,6 +146,6 @@ enum PlaybackState
 
 - (int)highest;
 - (void)processNextAction;
-- (void)changeToScreen:(int)screen;
+- (void)changeToScreen:(int)screen review:(bool)review;
 
 @end

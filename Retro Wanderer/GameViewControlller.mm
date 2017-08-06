@@ -24,12 +24,16 @@
 #import "GameCenterMgr.h"
 #import "HelpScreen.h"
 #import "DebugLogging.h"
+#import "SettingsTableViewController.h"
 
 #define kCurrentLevel       @"current_level"
 //#define kAnimationDuration  @"animation_duration"
 #define kAnimationDurationV (0.05)
 //#define kRapidFireDuration  @"rapid_fire_duration"
 #define kRapidFireDurationV (0.1)
+
+#define kDonateProductIdentifier @"org.teleportaloo.RetroWanderer.donation1a"
+#define kDonated                @"donated"
 
 #define kGameCenter         @"game_center"
 #define kSounds             @"sounds"
@@ -51,6 +55,7 @@
 #define kButtonL            @"(←)"
 #define kButtonR            @"(→)"
 #define kButtonU            @"(↑)"
+#define kButtonD            @"(↓)"
 #define kButtonPause        @"⏸"
 #define kControllerText     @"Controller Connected. Use:\n● D-pad to move,\n● button 'A' to skip.\n"
 
@@ -253,10 +258,6 @@
     
     [self setButtonForController:self.previousButton title:@"⇤" buttonName:kButtonL1 buttonOnRight:YES controllerFont:[UIFont systemFontOfSize:15] regularFont:[UIFont systemFontOfSize:26]];
     [self setButtonForController:self.nextButton     title:@"⇥" buttonName:kButtonR1 buttonOnRight:NO  controllerFont:[UIFont systemFontOfSize:15] regularFont:[UIFont systemFontOfSize:26]];
-
-    self.highScoresButton.hidden = !_gameCenter;
-    self.achievementsButton.hidden = !_gameCenter;
-    
     
     NSDictionary *achievement = [self achievementForScreen:_num];
     
@@ -286,7 +287,8 @@
     {
         case PlaybackStepping:
             self.playbackButton.hidden = NO;
-            [self setButtonForController:self.playbackButton title:@"Stop playback" buttonName:kButtonY buttonOnRight:YES];
+            [self setButtonForController:self.playbackButton title:@"Stop playback" buttonName:kButtonPause buttonOnRight:YES];
+            self.buttonActionMap[kButtonY] = nil;
             
             [self setButtonsForSeg:self.playbackSpeedSeg titles:@[@"Step", @"Slow Mo", @"Normal", @"Fast"] buttonNames:@[kButtonA, kButtonX, kButtonX, kButtonX]];
             self.playbackSpeedSeg.hidden = NO;
@@ -308,6 +310,7 @@
             {
                 [self setButtonForController:self.playbackButton title:@"Start playback" buttonName:kButtonY buttonOnRight:YES];
                 self.playbackButton.hidden = NO;
+                self.buttonActionMap[kButtonPause] = nil;
             }
             else
             {
@@ -419,7 +422,7 @@
     }
 }
 
-- (void)changeToScreen:(int)screen
+- (void)changeToScreen:(int)screen review:(bool)review
 {
     if (_unsavedMoves && self.playbackState!=PlaybackDone)
     {
@@ -448,13 +451,22 @@
                                                _num = screen;
                                                [self saveLevel];
                                                [self initScreen];
-                                           
+                                               
+                                               if (review)
+                                               {
+                                                   [self requestReview];
+                                               }
                                            }];
                                        }]];
         
         [alert addAction:[self actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel
                                     buttonName:kButtonX
-                                       handler:nil]];
+                                       handler:^(UIAlertAction * action) {
+                                           if (review)
+                                           {
+                                               [self requestReview];
+                                           }
+                                       }]];
         
         [self presentViewController:alert animated:YES completion:nil];
         
@@ -465,6 +477,10 @@
         [self saveLevel];
         [self scheduleNextAction:NextActionInitScreen move:0];
         
+        if (review)
+        {
+            [self requestReview];
+        }
     }
 }
 
@@ -505,6 +521,16 @@
         return [UIAlertAction actionWithTitle:[NSString stringWithFormat:@"%@ %@", buttonName, title] style:style handler: metaHandler];
     }
     return [UIAlertAction actionWithTitle:title style:style handler: handler];
+}
+
+-(void)requestReview
+{
+    Class reviewController  = (NSClassFromString(@"SKStoreReviewController"));
+    
+    if (reviewController !=nil)
+    {
+        [SKStoreReviewController requestReview];
+    }
 }
 
 -(void)makeMove:(char)key
@@ -625,7 +651,7 @@
                     
                     _total_score = [self calculateTotalScore];
                     
-                    if (_gameCenter)
+                    if (_gameCenter && _total_score > 0)
                     {
                         [[GameCenterMgr sharedManager] reportScore:_total_score];
                         [[GameCenterMgr sharedManager] reportAchievements:self.achievements];
@@ -673,13 +699,17 @@
                                                     buttonName:kButtonA
                                                        handler:^(UIAlertAction * action) {
                                                            _unsavedMoves = NO;
-                                                           [self changeToScreen:next];
+                                                           [self changeToScreen:next review:YES];
                                                        }
                                       ];
                         } else {
                             action = [weakSelf actionWithTitle:@"OK" style:UIAlertActionStyleDestructive
                                                     buttonName:kButtonA
-                                                       handler:nil];
+                                                       handler:^(UIAlertAction * action) {
+                                                           [self requestReview];
+                                                       }
+                                      
+                                      ];
                         }
                         
                         
@@ -899,6 +929,8 @@
     
     [defaults synchronize];
     
+    _donated = [defaults boolForKey:kDonated];
+    
     if (self.playbackState != PlaybackStepping)
     {
         self.display.animationDuration = kAnimationDurationV;
@@ -970,6 +1002,16 @@
                                                   frame.origin.y, frame.size.width, frame.size.height);
 
     }
+    
+    self.highScoresButton.hidden = !_gameCenter;
+    self.achievementsButton.hidden = !_gameCenter;
+    self.donateButton.hidden = _donated || ![SKPaymentQueue canMakePayments];
+    
+    if (_donated)
+    {
+        self.thanksLabel.text = @"❤️😀";
+    }
+    self.thanksLabel.hidden  = !_donated;
 
 }
 
@@ -977,6 +1019,13 @@
     [super viewDidLoad];
     
     [self toggleHardwareController:YES];
+    
+    
+    // For testing donations
+#ifdef DEBUGLOGGING
+    [[NSUserDefaults standardUserDefaults] setBool:NO forKey:kDonated];
+    DEBUG_LOG(@"Remvoed donation!");
+#endif
     
     [self getAchievements];
     
@@ -1117,6 +1166,8 @@
     }
 }
 
+
+
 - (IBAction)saveCheckpoint:(id)sender {
     if (self.previousKeyStrokes)
     {
@@ -1134,7 +1185,10 @@
         
         [alert addAction:[self actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel
                                     buttonName:kButtonX
-                                       handler:nil]];
+                                       handler:^(UIAlertAction * action) {
+                                           [[SKPaymentQueue defaultQueue] addTransactionObserver:self];
+                                           [[SKPaymentQueue defaultQueue] restoreCompletedTransactions];
+                                       }]];
         
         [self presentViewController:alert animated:YES completion:nil];
     }
@@ -1347,7 +1401,7 @@
 - (IBAction)next:(id)sender {
     if (_num < self.highest)
     {
-        [self changeToScreen:_num+1];
+        [self changeToScreen:_num+1 review:NO];
     }
 }
 
@@ -1361,7 +1415,7 @@
     
     if (_num >0)
     {
-        [self changeToScreen:_num-1];
+        [self changeToScreen:_num-1 review:NO];
     }
 }
 
@@ -1408,6 +1462,8 @@
     }
 }
 
+
+#define BUTTON_LOG(X) DEBUG_LOG(@"Button: %@ pressed %d value %f delta %f blocked %d\n", X, pressed, value, [depressedDate timeIntervalSinceNow], [depressedDate timeIntervalSinceNow] >= BUTTON_BOUNCE )
 -(bool)setupControler
 {
     NSArray *controllers = [GCController controllers];
@@ -1425,9 +1481,15 @@
             __block NSDate *depressedDate = [NSDate date];
             
             [self.controller.extendedGamepad.dpad.up  setValueChangedHandler:^(GCControllerButtonInput *button, float value, BOOL pressed) {
+                BUTTON_LOG(kButtonU);
                 if (weakSelf.buttonActionMap[kButtonU])
                 {
-                    (weakSelf.buttonActionMap[kButtonU])();
+                    if (pressed &&  [depressedDate timeIntervalSinceNow] < BUTTON_BOUNCE)
+                    {
+                        (weakSelf.buttonActionMap[kButtonU])();
+                        depressedDate = [NSDate date];
+                    }
+                    
                 }
                 else if (self.playbackState==PlaybackRecording)
                 {
@@ -1436,8 +1498,7 @@
             }];
             
             [self.controller.extendedGamepad.dpad.down setValueChangedHandler:^(GCControllerButtonInput *button, float value, BOOL pressed) {
-                
-                
+                BUTTON_LOG(kButtonD);
                 if (self.playbackState==PlaybackRecording)
                 {
                     depressedDate = [weakSelf keyStroke:kMoveKeyDown last:depressedDate value:value pressed:pressed button:button];
@@ -1446,9 +1507,14 @@
             
             
             [self.controller.extendedGamepad.dpad.left setValueChangedHandler:^(GCControllerButtonInput *button, float value, BOOL pressed) {
+                BUTTON_LOG(kButtonL);
                 if (weakSelf.buttonActionMap[kButtonL])
                 {
-                    (weakSelf.buttonActionMap[kButtonL])();
+                    if (pressed &&  [depressedDate timeIntervalSinceNow] < BUTTON_BOUNCE)
+                    {
+                        (weakSelf.buttonActionMap[kButtonL])();
+                        depressedDate = [NSDate date];
+                    }
                 }
                 else if (self.playbackState==PlaybackRecording)
                 {
@@ -1457,12 +1523,16 @@
             }];
             
             [self.controller.extendedGamepad.dpad.right setValueChangedHandler:^(GCControllerButtonInput *button, float value, BOOL pressed) {
+                BUTTON_LOG(kButtonR);
                 if (weakSelf.buttonActionMap[kButtonR])
                 {
-                    (weakSelf.buttonActionMap[kButtonR])();
+                    if (pressed &&  [depressedDate timeIntervalSinceNow] < BUTTON_BOUNCE)
+                    {
+                        (weakSelf.buttonActionMap[kButtonR])();
+                        depressedDate = [NSDate date];
+                    }
                 }
-                else
-                if (self.playbackState==PlaybackRecording)
+                else if (self.playbackState==PlaybackRecording)
                 {
                     depressedDate = [weakSelf keyStroke:kMoveKeyRight last:depressedDate value:value pressed:pressed button:button];
                 }
@@ -1471,6 +1541,11 @@
             
             [self.controller setControllerPausedHandler: ^(GCController *controller)
              {
+#ifdef DEBUGLOGGING
+                 bool pressed = YES;
+                 float value = 0.0;
+#endif
+                 BUTTON_LOG(kButtonPause);
                  if ([depressedDate timeIntervalSinceNow] < BUTTON_BOUNCE)
                  {
                      depressedDate = [NSDate date];
@@ -1485,9 +1560,9 @@
              }];
             
             [self.controller.extendedGamepad.rightShoulder setValueChangedHandler:^(GCControllerButtonInput *button, float value, BOOL pressed) {
+                BUTTON_LOG(kButtonR1);
                 if (pressed &&  [depressedDate timeIntervalSinceNow] < BUTTON_BOUNCE)
                 {
-                    depressedDate = [NSDate date];
                     if (weakSelf.presentedViewController==nil)
                     {
                         if (weakSelf.buttonActionMap[kButtonR1])
@@ -1495,36 +1570,36 @@
                             (weakSelf.buttonActionMap[kButtonR1])();
                         }
                     }
+                    depressedDate = [NSDate date];
                 }
             }];
             
             [self.controller.extendedGamepad.leftShoulder setValueChangedHandler:^(GCControllerButtonInput *button, float value, BOOL pressed) {
+                BUTTON_LOG(kButtonL1);
                 if (pressed && [depressedDate timeIntervalSinceNow] < BUTTON_BOUNCE)
                 {
-                    depressedDate = [NSDate date];
                     if (weakSelf.presentedViewController==nil)
                     {
                         if (weakSelf.buttonActionMap[kButtonL1])
                         {
                             (weakSelf.buttonActionMap[kButtonL1])();
                         }
-
                     }
+                    depressedDate = [NSDate date];
                 }
             }];
             
             [self.controller.extendedGamepad.buttonA setValueChangedHandler:^(GCControllerButtonInput *button, float value, BOOL pressed) {
-                
-                
+                BUTTON_LOG(kButtonA);
                 if (weakSelf.presentedViewController)
                 {
                     if (pressed && [depressedDate timeIntervalSinceNow] < BUTTON_BOUNCE)
                     {
-                        depressedDate = [NSDate date];
                         if (weakSelf.alertActionMap[kButtonA])
                         {
                             (weakSelf.alertActionMap[kButtonA])(nil);
                         }
+                        depressedDate = [NSDate date];
                     }
                 }
                 else if (self.playbackState != PlaybackStepping || self.playbackSpeedSeg.selectedSegmentIndex == kSegStep)
@@ -1539,9 +1614,9 @@
             }];
             
             [self.controller.extendedGamepad.buttonB setValueChangedHandler:^(GCControllerButtonInput *button, float value, BOOL pressed) {
+                BUTTON_LOG(kButtonB);
                 if (pressed && [depressedDate timeIntervalSinceNow] < BUTTON_BOUNCE)
                 {
-                    depressedDate = [NSDate date];
                     if (weakSelf.presentedViewController)
                     {
                         if (weakSelf.alertActionMap[kButtonB])
@@ -1556,15 +1631,15 @@
                             (weakSelf.buttonActionMap[kButtonB])();
                         }
                     }
-                    
+                    depressedDate = [NSDate date];
                 }
                 
             }];
             
             [self.controller.extendedGamepad.buttonX setValueChangedHandler:^(GCControllerButtonInput *button, float value, BOOL pressed) {
+                BUTTON_LOG(kButtonX);
                 if (pressed && [depressedDate timeIntervalSinceNow] < BUTTON_BOUNCE)
                 {
-                    depressedDate = [NSDate date];
                     if (weakSelf.presentedViewController)
                     {
                         
@@ -1582,14 +1657,15 @@
                             (weakSelf.buttonActionMap[kButtonX])();
                         }
                     }
+                    depressedDate = [NSDate date];
                 }
                 
             }];
             
             [self.controller.extendedGamepad.buttonY setValueChangedHandler:^(GCControllerButtonInput *button, float value, BOOL pressed) {
+                BUTTON_LOG(kButtonY);
                 if (pressed && [depressedDate timeIntervalSinceNow] < BUTTON_BOUNCE)
                 {
-                    depressedDate = [NSDate date];
                     if (weakSelf.presentedViewController)
                     {
                         
@@ -1597,8 +1673,6 @@
                         {
                             (weakSelf.alertActionMap[kButtonY])(nil);
                         }
-                        
-                        
                     }
                     else
                     {
@@ -1607,6 +1681,7 @@
                             (weakSelf.buttonActionMap[kButtonY])();
                         }
                     }
+                    depressedDate = [NSDate date];
                 }
             }];
         }
@@ -1691,9 +1766,34 @@
 
 - (IBAction)settingsTouched:(id)sender {
     
-    [[UIApplication sharedApplication] openURL:[NSURL URLWithString:UIApplicationOpenSettingsURLString]
-                                       options:[NSDictionary dictionary]
-                             completionHandler:nil];
+    /*
+     [[UIApplication sharedApplication] openURL:[NSURL URLWithString:UIApplicationOpenSettingsURLString]
+     options:[NSDictionary dictionary]
+     completionHandler:nil];
+     
+     */
+    
+    
+    // grab the view controller we want to show
+    
+    UINavigationController *controller = [[UINavigationController alloc] init];
+    
+    UIViewController *settings = [[SettingsTableViewController alloc] init];
+    
+    [controller pushViewController:settings animated:NO];
+    controller.title = @"Settings";
+
+    
+    // present the controller
+    // on iPad, this will be a Popover
+    // on iPhone, this will be an action sheet
+    controller.modalPresentationStyle = UIModalPresentationPopover;
+    [self presentViewController:controller animated:YES completion:nil];
+    
+    // configure the Popover presentation controller
+    UIPopoverPresentationController *popController = [controller popoverPresentationController];
+    popController.permittedArrowDirections = UIPopoverArrowDirectionAny;
+    popController.sourceView = self.settingsButton;
     
     
 }
@@ -1802,4 +1902,144 @@
         [self updateLevelButtons];
     }
 }
+
+#pragma mark In app purchases
+
+- (void)donated
+{
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    [defaults setBool:YES forKey:kDonated];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+}
+
+- (IBAction)donate:(id)sender
+{
+    if([SKPaymentQueue canMakePayments]){
+        SKProductsRequest *productsRequest = [[SKProductsRequest alloc] initWithProductIdentifiers:[NSSet setWithObject:kDonateProductIdentifier]];
+        productsRequest.delegate = self;
+        [productsRequest start];
+        // self.donateButton.titleLabel.text=@"Working...";
+        self.donateButton.enabled = NO;
+    }
+}
+
+- (void)productsRequest:(SKProductsRequest *)request didReceiveResponse:(SKProductsResponse *)response
+{
+    SKProduct *validProduct = nil;
+    NSInteger count = [response.products count];
+    if(count > 0){
+        validProduct = [response.products objectAtIndex:0];
+        
+        NSNumberFormatter *numberFormatter = [[NSNumberFormatter alloc] init];
+        [numberFormatter setFormatterBehavior:NSNumberFormatterBehavior10_4];
+        [numberFormatter setNumberStyle:NSNumberFormatterCurrencyStyle];
+        [numberFormatter setLocale:validProduct.priceLocale];
+        
+//      NSLocale* storeLocale = validProduct.priceLocale;
+//      NSString *storeCountry = (NSString*)CFLocaleGetValue((CFLocaleRef)storeLocale, kCFLocaleCountryCode);
+        NSString *price = [numberFormatter stringFromNumber:validProduct.price];
+        
+        UIAlertController* alert = [UIAlertController alertControllerWithTitle:@"Donate"
+                                                                       message:[NSString stringWithFormat:@"If you like this app, would you donate %@ to the developer? The features of the app will rename the same, but the 'Donate!' button will disappear.",
+                                                                                                            price]
+                                                                preferredStyle:UIAlertControllerStyleAlert];
+        
+        [alert addAction:[self actionWithTitle:@"OK" style:UIAlertActionStyleDestructive
+                                    buttonName:kButtonA
+                                       handler:^(UIAlertAction * action) {
+                                           
+                                           [self purchase:validProduct];
+                                           
+                                       }]];
+        
+        [alert addAction:[self actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel
+                                    buttonName:kButtonX
+                                       handler:nil]];
+        
+        
+        [alert addAction:[self actionWithTitle:@"Restore Purchases" style:UIAlertActionStyleDefault
+                                    buttonName:kButtonY
+                                       handler:^(UIAlertAction * action) {
+                                           [[SKPaymentQueue defaultQueue] addTransactionObserver:self];
+                                           [[SKPaymentQueue defaultQueue] restoreCompletedTransactions];
+                                       }]];
+        
+        [self presentViewController:alert animated:YES completion:nil];
+    }
+    else if(!validProduct){
+        // NSLog(@"No products available");
+        //this is called if your product id is not valid, this shouldn't be called unless that happens.
+        
+        DEBUG_LOG(@"Bad ids %@", response.invalidProductIdentifiers.debugDescription);
+    }
+    
+    
+    // self.donateButton.titleLabel.text=@"Donate!";
+    self.donateButton.enabled = YES;
+}
+
+- (void)purchase:(SKProduct *)product{
+    SKPayment *payment = [SKPayment paymentWithProduct:product];
+    
+    [[SKPaymentQueue defaultQueue] addTransactionObserver:self];
+    [[SKPaymentQueue defaultQueue] addPayment:payment];
+}
+
+
+- (void) paymentQueueRestoreCompletedTransactionsFinished:(SKPaymentQueue *)queue
+{
+    DEBUG_LOG(@"received restored transactions: %lu", (unsigned long)queue.transactions.count);
+    for(SKPaymentTransaction *transaction in queue.transactions){
+        if(transaction.transactionState == SKPaymentTransactionStateRestored){
+            //called when the user successfully restores a purchase
+            DEBUG_LOG(@"Transaction state -> Restored");
+
+            [self donated];
+            [[SKPaymentQueue defaultQueue] finishTransaction:transaction];
+            break;
+        }
+    }
+}
+
+- (void)paymentQueue:(SKPaymentQueue *)queue updatedTransactions:(NSArray *)transactions{
+    for(SKPaymentTransaction *transaction in transactions){
+        //if you have multiple in app purchases in your app,
+        //you can get the product identifier of this transaction
+        //by using transaction.payment.productIdentifier
+        //
+        //then, check the identifier against the product IDs
+        //that you have defined to check which product the user
+        //just purchased
+        
+        switch(transaction.transactionState){
+            case SKPaymentTransactionStatePurchasing:
+                DEBUG_LOG(@"Transaction state -> Purchasing");
+                //called when the user is in the process of purchasing, do not add any of your own code here.
+                break;
+            case SKPaymentTransactionStateDeferred:
+                break;
+            case SKPaymentTransactionStatePurchased:
+                //this is called when the user has successfully purchased the package (Cha-Ching!)
+                [self donated]; //you can add your code for what you want to happen when the user buys the purchase here, for this tutorial we use removing ads
+                [[SKPaymentQueue defaultQueue] finishTransaction:transaction];
+                DEBUG_LOG(@"Transaction state -> Purchased");
+                break;
+            case SKPaymentTransactionStateRestored:
+                DEBUG_LOG(@"Transaction state -> Restored");
+                //add the same code as you did from SKPaymentTransactionStatePurchased here
+                [self donated];
+                [[SKPaymentQueue defaultQueue] finishTransaction:transaction];
+                break;
+            case SKPaymentTransactionStateFailed:
+                //called when the transaction does not finish
+                if(transaction.error.code == SKErrorPaymentCancelled){
+                    DEBUG_LOG(@"Transaction state -> Cancelled");
+                    //the user cancelled the payment ;(
+                }
+                [[SKPaymentQueue defaultQueue] finishTransaction:transaction];
+                break;
+        }
+    }
+}
+
 @end

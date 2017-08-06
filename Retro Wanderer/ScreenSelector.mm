@@ -36,7 +36,7 @@
         {
             [self dismissViewControllerAnimated:YES completion:
              ^{
-                 [self.gameView changeToScreen:screen];
+                 [self.gameView changeToScreen:screen review:NO];
              }];
             break;
         }
