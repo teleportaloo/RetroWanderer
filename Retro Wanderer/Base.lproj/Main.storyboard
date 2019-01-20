@@ -1,23 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="12121" systemVersion="16F73" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES" initialViewController="BV1-FR-VrT">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="13196" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES" initialViewController="BV1-FR-VrT">
     <device id="ipad9_7" orientation="landscape">
         <adaptation id="fullscreen"/>
     </device>
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="12089"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="13173"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
+    <customFonts key="customFonts">
+        <array key="Courier.ttc">
+            <string>Courier</string>
+        </array>
+        <array key="CourierNew.ttf">
+            <string>CourierNewPSMT</string>
+        </array>
+    </customFonts>
     <scenes>
-        <!--Game View Controller-->
+        <!--Game View Controlleri Pad-->
         <scene sceneID="tXr-a1-R10">
             <objects>
-                <viewController id="BV1-FR-VrT" customClass="GameViewController" sceneMemberID="viewController">
+                <viewController id="BV1-FR-VrT" customClass="GameViewControlleriPad" sceneMemberID="viewController">
                     <layoutGuides>
                         <viewControllerLayoutGuide type="top" id="8aa-yV-Osq"/>
                         <viewControllerLayoutGuide type="bottom" id="qHh-Mt-9TT"/>
                     </layoutGuides>
-                    <view key="view" multipleTouchEnabled="YES" contentMode="scaleToFill" id="3se-qz-xqx" customClass="SKView">
+                    <view key="view" multipleTouchEnabled="YES" contentMode="scaleToFill" id="3se-qz-xqx">
                         <rect key="frame" x="0.0" y="0.0" width="1024" height="768"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
@@ -70,126 +78,26 @@
                                 <color key="textColor" red="0.27192889230988437" green="1" blue="0.21893804376439097" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                 <nil key="highlightedColor"/>
                             </label>
-                            <view contentMode="scaleToFill" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="N1S-cM-Yi8">
+                            <view contentMode="scaleToFill" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="N1S-cM-Yi8" customClass="DirectionClusterControl">
                                 <rect key="frame" x="833" y="0.0" width="191" height="146"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                <subviews>
-                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="J4w-Km-Rbu">
-                                        <rect key="frame" x="0.0" y="0.0" width="191" height="146"/>
-                                        <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxY="YES"/>
-                                        <fontDescription key="fontDescription" type="system" pointSize="14"/>
-                                        <color key="textColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
-                                        <nil key="highlightedColor"/>
-                                    </label>
-                                    <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="WHQ-OD-NUD">
-                                        <rect key="frame" x="0.0" y="48" width="65" height="50"/>
-                                        <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxY="YES"/>
-                                        <color key="backgroundColor" red="1" green="0.50196078430000002" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
-                                        <fontDescription key="fontDescription" type="system" pointSize="27"/>
-                                        <state key="normal" title="←">
-                                            <color key="titleColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-                                        </state>
-                                        <connections>
-                                            <action selector="controlButtonUp:" destination="BV1-FR-VrT" eventType="touchUpOutside" id="4Tj-do-W5w"/>
-                                            <action selector="controlButtonUp:" destination="BV1-FR-VrT" eventType="touchCancel" id="HvN-js-cda"/>
-                                            <action selector="controlButtonUp:" destination="BV1-FR-VrT" eventType="touchDragOutside" id="U25-AU-5gd"/>
-                                            <action selector="controlButtonUp:" destination="BV1-FR-VrT" eventType="touchDragExit" id="tRE-6i-u1y"/>
-                                            <action selector="controlButtonUp:" destination="BV1-FR-VrT" eventType="touchUpInside" id="uTN-Yn-TvN"/>
-                                            <action selector="left:" destination="BV1-FR-VrT" eventType="touchDown" id="ZVc-2E-CNg"/>
-                                        </connections>
-                                    </button>
-                                    <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="yHq-HK-WCH">
-                                        <rect key="frame" x="63" y="96" width="65" height="50"/>
-                                        <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxY="YES"/>
-                                        <color key="backgroundColor" red="1" green="0.50196078430000002" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
-                                        <fontDescription key="fontDescription" type="system" pointSize="27"/>
-                                        <state key="normal" title="↓">
-                                            <color key="titleColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-                                        </state>
-                                        <connections>
-                                            <action selector="controlButtonUp:" destination="BV1-FR-VrT" eventType="touchCancel" id="Asy-Ar-TeN"/>
-                                            <action selector="controlButtonUp:" destination="BV1-FR-VrT" eventType="touchDragOutside" id="L3X-0a-cRM"/>
-                                            <action selector="controlButtonUp:" destination="BV1-FR-VrT" eventType="touchUpInside" id="clN-ie-Yhd"/>
-                                            <action selector="controlButtonUp:" destination="BV1-FR-VrT" eventType="touchUpOutside" id="hif-tp-Fn1"/>
-                                            <action selector="controlButtonUp:" destination="BV1-FR-VrT" eventType="touchDragExit" id="uJy-XR-Nht"/>
-                                            <action selector="down:" destination="BV1-FR-VrT" eventType="touchDown" id="Aai-6x-E0K"/>
-                                        </connections>
-                                    </button>
-                                    <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="TJi-Uz-Qmq">
-                                        <rect key="frame" x="126" y="48" width="65" height="50"/>
-                                        <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxY="YES"/>
-                                        <color key="backgroundColor" red="1" green="0.50196078430000002" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
-                                        <fontDescription key="fontDescription" type="system" pointSize="27"/>
-                                        <state key="normal" title="→">
-                                            <color key="titleColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-                                        </state>
-                                        <connections>
-                                            <action selector="controlButtonUp:" destination="BV1-FR-VrT" eventType="touchUpInside" id="ODb-SF-zYf"/>
-                                            <action selector="controlButtonUp:" destination="BV1-FR-VrT" eventType="touchDragExit" id="WLR-Mt-yUv"/>
-                                            <action selector="controlButtonUp:" destination="BV1-FR-VrT" eventType="touchDragOutside" id="ePN-7m-Lg5"/>
-                                            <action selector="controlButtonUp:" destination="BV1-FR-VrT" eventType="touchCancel" id="fdt-B7-9dq"/>
-                                            <action selector="controlButtonUp:" destination="BV1-FR-VrT" eventType="touchUpOutside" id="gda-T7-QWj"/>
-                                            <action selector="right:" destination="BV1-FR-VrT" eventType="touchDown" id="eOi-cF-Dju"/>
-                                        </connections>
-                                    </button>
-                                    <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="ahj-Wg-P6n">
-                                        <rect key="frame" x="63" y="0.0" width="65" height="50"/>
-                                        <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxY="YES"/>
-                                        <color key="backgroundColor" red="1" green="0.50196078430000002" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
-                                        <fontDescription key="fontDescription" type="system" pointSize="27"/>
-                                        <state key="normal" title="↑">
-                                            <color key="titleColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-                                        </state>
-                                        <connections>
-                                            <action selector="continuousChanged:" destination="BV1-FR-VrT" eventType="touchUpOutside" id="dQn-Ys-JXv"/>
-                                            <action selector="controlButtonUp:" destination="BV1-FR-VrT" eventType="touchDragOutside" id="1lL-MB-gLy"/>
-                                            <action selector="controlButtonUp:" destination="BV1-FR-VrT" eventType="touchDragExit" id="Mp7-2A-Fv2"/>
-                                            <action selector="controlButtonUp:" destination="BV1-FR-VrT" eventType="touchUpInside" id="Zla-cj-hIy"/>
-                                            <action selector="controlButtonUp:" destination="BV1-FR-VrT" eventType="touchCancel" id="zde-vb-s6U"/>
-                                            <action selector="up:" destination="BV1-FR-VrT" eventType="touchDown" id="kns-tR-ebc"/>
-                                        </connections>
-                                    </button>
-                                    <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="FdX-hZ-Gae">
-                                        <rect key="frame" x="63" y="48" width="65" height="50"/>
-                                        <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxY="YES"/>
-                                        <color key="backgroundColor" red="1" green="0.50196078430000002" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
-                                        <fontDescription key="fontDescription" type="system" pointSize="27"/>
-                                        <state key="normal" title="●">
-                                            <color key="titleColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-                                        </state>
-                                        <connections>
-                                            <action selector="controlButtonUp:" destination="BV1-FR-VrT" eventType="touchCancel" id="1WW-oK-kMN"/>
-                                            <action selector="controlButtonUp:" destination="BV1-FR-VrT" eventType="touchUpInside" id="6Jc-wk-wrg"/>
-                                            <action selector="controlButtonUp:" destination="BV1-FR-VrT" eventType="touchDragExit" id="AwE-xI-0ih"/>
-                                            <action selector="controlButtonUp:" destination="BV1-FR-VrT" eventType="touchUpOutside" id="fTs-jQ-yY3"/>
-                                            <action selector="controlButtonUp:" destination="BV1-FR-VrT" eventType="touchDragOutside" id="nyG-Qt-JCy"/>
-                                            <action selector="stay:" destination="BV1-FR-VrT" eventType="touchDown" id="7aE-au-PIw"/>
-                                        </connections>
-                                    </button>
-                                    <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="vip-Fg-ZeK">
-                                        <rect key="frame" x="0.0" y="0.0" width="191" height="146"/>
-                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                        <color key="backgroundColor" red="1" green="0.50196078430000002" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
-                                        <fontDescription key="fontDescription" type="system" pointSize="104"/>
-                                        <state key="normal" title="⇢">
-                                            <color key="titleColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-                                        </state>
-                                        <connections>
-                                            <action selector="controlButtonUp:" destination="BV1-FR-VrT" eventType="touchDragOutside" id="V5p-LX-hor"/>
-                                            <action selector="controlButtonUp:" destination="BV1-FR-VrT" eventType="touchDragExit" id="Wnc-AQ-bec"/>
-                                            <action selector="controlButtonUp:" destination="BV1-FR-VrT" eventType="touchUpOutside" id="h8w-zh-Shw"/>
-                                            <action selector="controlButtonUp:" destination="BV1-FR-VrT" eventType="touchCancel" id="jHr-9g-Gua"/>
-                                            <action selector="controlButtonUp:" destination="BV1-FR-VrT" eventType="touchUpInside" id="lZf-Uy-qVi"/>
-                                            <action selector="stay:" destination="BV1-FR-VrT" eventType="touchDown" id="SSv-Oo-3y6"/>
-                                        </connections>
-                                    </button>
-                                </subviews>
                                 <color key="backgroundColor" red="1" green="1" blue="1" alpha="0.0" colorSpace="custom" customColorSpace="sRGB"/>
+                                <connections>
+                                    <action selector="controlButtonTouched:forEvent:" destination="BV1-FR-VrT" eventType="touchDown" id="KnJ-LB-gSh"/>
+                                    <action selector="controlButtonUp:" destination="BV1-FR-VrT" eventType="touchCancel" id="LWp-WE-Y7K"/>
+                                    <action selector="controlButtonUp:" destination="BV1-FR-VrT" eventType="touchDragExit" id="vU9-ec-Dzk"/>
+                                    <action selector="controlButtonUp:" destination="BV1-FR-VrT" eventType="touchUpInside" id="y4l-Ym-8wu"/>
+                                </connections>
                             </view>
                             <view contentMode="scaleToFill" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="8lN-0f-0sr">
                                 <rect key="frame" x="0.0" y="0.0" width="323" height="152"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                 <subviews>
+                                    <view hidden="YES" contentMode="scaleToFill" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="3BQ-4c-39l">
+                                        <rect key="frame" x="159.5" y="64" width="2" height="3"/>
+                                        <autoresizingMask key="autoresizingMask"/>
+                                        <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                    </view>
                                     <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" reversesTitleShadowWhenHighlighted="YES" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="LOZ-an-5bH">
                                         <rect key="frame" x="28" y="79" width="100" height="31"/>
                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
@@ -209,7 +117,7 @@
                                             <color key="titleColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                         </state>
                                         <connections>
-                                            <segue destination="Urc-VE-aVM" kind="popoverPresentation" identifier="showScreenSelector" popoverAnchorView="dT1-F5-VJi" id="gU5-PA-NbS">
+                                            <segue destination="Urc-VE-aVM" kind="popoverPresentation" identifier="showScreenSelector" popoverAnchorView="3BQ-4c-39l" id="gU5-PA-NbS">
                                                 <popoverArrowDirection key="popoverArrowDirection" up="YES" down="YES" left="YES" right="YES"/>
                                             </segue>
                                         </connections>
@@ -310,13 +218,10 @@
                                 <color key="textColor" red="0.96666218260903747" green="1" blue="0.99890266684310025" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                 <nil key="highlightedColor"/>
                             </label>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="k8z-dZ-esG">
-                                <rect key="frame" x="810" y="667" width="49" height="22"/>
+                            <activityIndicatorView hidden="YES" opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" fixedFrame="YES" hidesWhenStopped="YES" style="whiteLarge" translatesAutoresizingMaskIntoConstraints="NO" id="VUK-6C-u8q">
+                                <rect key="frame" x="810" y="645" width="50" height="30"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMinY="YES"/>
-                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
-                                <color key="textColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-                                <nil key="highlightedColor"/>
-                            </label>
+                            </activityIndicatorView>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="YWy-4I-IWa">
                                 <rect key="frame" x="608" y="726" width="130" height="22"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMinY="YES"/>
@@ -324,9 +229,9 @@
                                 <color key="textColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                 <nil key="highlightedColor"/>
                             </label>
-                            <segmentedControl opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="left" contentVerticalAlignment="top" segmentControlStyle="plain" selectedSegmentIndex="0" translatesAutoresizingMaskIntoConstraints="NO" id="dId-vb-UKv">
+                            <segmentedControl opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="left" contentVerticalAlignment="top" segmentControlStyle="plain" selectedSegmentIndex="0" translatesAutoresizingMaskIntoConstraints="NO" id="dId-vb-UKv" customClass="AugmentedSegmentControl">
                                 <rect key="frame" x="320" y="123" width="372" height="29"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                 <segments>
                                     <segment title="Step"/>
                                     <segment title="Slow Mo"/>
@@ -367,6 +272,22 @@
                                     <action selector="showHelp:" destination="BV1-FR-VrT" eventType="touchUpInside" id="gzB-6x-fvO"/>
                                 </connections>
                             </button>
+                            <skView contentMode="scaleToFill" fixedFrame="YES" sceneName="GameScene.sks" translatesAutoresizingMaskIntoConstraints="NO" id="x2E-tL-Ab2">
+                                <rect key="frame" x="32" y="165" width="960" height="455"/>
+                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                            </skView>
+                            <progressView opaque="NO" contentMode="scaleToFill" verticalHuggingPriority="750" fixedFrame="YES" progress="0.5" translatesAutoresizingMaskIntoConstraints="NO" id="P5C-Ak-60C">
+                                <rect key="frame" x="320" y="159" width="372" height="2"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <color key="progressTintColor" red="0.0" green="1" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
+                            </progressView>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="Label" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="QsE-Xz-OTD">
+                                <rect key="frame" x="810" y="683" width="50" height="31"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMinY="YES"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                <nil key="textColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
                         </subviews>
                         <color key="backgroundColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                         <gestureRecognizers/>
@@ -380,35 +301,30 @@
                     <connections>
                         <outlet property="achievementLabel" destination="6x1-Yr-2vW" id="kBK-ww-y1n"/>
                         <outlet property="achievementsButton" destination="Uiw-Dg-MTr" id="ulv-Iv-lyu"/>
-                        <outlet property="animatingLabel" destination="k8z-dZ-esG" id="mSY-ta-2Bd"/>
+                        <outlet property="activityIndicator" destination="VUK-6C-u8q" id="vbq-Hb-Nqf"/>
                         <outlet property="busyLabel" destination="YWy-4I-IWa" id="bYv-0p-4Zn"/>
-                        <outlet property="controlClusterView" destination="N1S-cM-Yi8" id="QzR-xZ-Ne3"/>
-                        <outlet property="controllerLabel" destination="J4w-Km-Rbu" id="Wtc-Zc-CYN"/>
+                        <outlet property="controlClusterView" destination="N1S-cM-Yi8" id="tTN-pg-9qA"/>
+                        <outlet property="controllerConnectedLabel" destination="QsE-Xz-OTD" id="Pt4-R2-4KZ"/>
                         <outlet property="diamondsLabel" destination="Y3g-a8-ojS" id="9Zq-4E-Kfk"/>
                         <outlet property="donateButton" destination="Zkv-bx-Yu0" id="oKG-kZ-XCC"/>
-                        <outlet property="downButton" destination="yHq-HK-WCH" id="QAS-am-k9h"/>
                         <outlet property="helpButton" destination="uPt-YU-rM6" id="YJX-PH-i9s"/>
                         <outlet property="highScoresButton" destination="snQ-fQ-Uhc" id="8H6-17-Xvf"/>
-                        <outlet property="leftButton" destination="WHQ-OD-NUD" id="Inp-go-BiN"/>
                         <outlet property="maxMovesLabel" destination="Y1j-gN-c0i" id="rYX-Mn-tbv"/>
                         <outlet property="monsterLabel" destination="fEG-hc-PCB" id="eIG-Bh-E8e"/>
                         <outlet property="nameLabel" destination="t49-hj-qBJ" id="n8z-sg-gtr"/>
                         <outlet property="nextButton" destination="bkM-uH-FZd" id="Of1-9E-HWw"/>
                         <outlet property="playbackButton" destination="hLq-b8-ajs" id="2tK-vF-xWq"/>
-                        <outlet property="playbackMoves" destination="d2B-an-sT3" id="p26-CQ-v0h"/>
+                        <outlet property="playbackProgress" destination="P5C-Ak-60C" id="IX0-y5-njG"/>
                         <outlet property="playbackSpeedSeg" destination="dId-vb-UKv" id="AEq-Rh-Iwg"/>
                         <outlet property="previousButton" destination="ePx-f1-ZBI" id="X9i-lb-NhM"/>
-                        <outlet property="rightButton" destination="TJi-Uz-Qmq" id="rMf-SK-otF"/>
                         <outlet property="saveCheckpointButton" destination="EbK-t2-Bsx" id="hR3-Fm-7gb"/>
                         <outlet property="scoreLabel" destination="12l-Sn-9Wr" id="8c8-b5-3MC"/>
                         <outlet property="screenClusterView" destination="8lN-0f-0sr" id="f92-E9-d6J"/>
                         <outlet property="settingsButton" destination="LOZ-an-5bH" id="kfs-Ng-6o2"/>
+                        <outlet property="spriteView" destination="x2E-tL-Ab2" id="vZ1-zQ-yUb"/>
                         <outlet property="startOverButton" destination="1Eh-Ny-6qj" id="1u5-zf-Kho"/>
-                        <outlet property="stayButton" destination="FdX-hZ-Gae" id="8lS-OI-Hj9"/>
-                        <outlet property="stepButton" destination="vip-Fg-ZeK" id="ouP-C9-qhZ"/>
                         <outlet property="thanksLabel" destination="Bz8-Jv-yBZ" id="UNE-Y8-zpS"/>
                         <outlet property="totalScoreLabel" destination="bvl-iy-XmT" id="tlp-LN-KhW"/>
-                        <outlet property="upButton" destination="ahj-Wg-P6n" id="4cV-Ba-iHb"/>
                         <outletCollection property="gestures" destination="hEp-s8-qgT" id="Yje-uf-OEP"/>
                         <outletCollection property="gestures" destination="f1v-Oh-ZJj" id="QM9-Nr-s3h"/>
                         <outletCollection property="gestures" destination="oES-D7-F2b" id="bnX-YF-kqg"/>
@@ -448,7 +364,7 @@
                         <viewControllerLayoutGuide type="bottom" id="hps-Gs-8XV"/>
                     </layoutGuides>
                     <view key="view" contentMode="scaleToFill" id="DX7-4T-gbH">
-                        <rect key="frame" x="0.0" y="0.0" width="1024" height="768"/>
+                        <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="Choose a screen" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="HWR-cO-VOu">

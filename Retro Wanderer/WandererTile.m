@@ -36,7 +36,7 @@ static NSMutableDictionary<NSNumber *, WandererTextureFactory *>  *factories;
 {
     if (retro != newRetro)
     {
-        textures = nil;
+        textures = [NSMutableDictionary dictionary];
     }
     retro = newRetro;
 }
@@ -86,23 +86,23 @@ static NSMutableDictionary<NSNumber *, WandererTextureFactory *>  *factories;
     static dispatch_once_t once;
     dispatch_once(&once, ^ {
         factories = @{
-                       @'@':  [WandererEmojiFactory withEmoji:@"😀"],
+                       @'@' : [WandererEmojiFactory withEmoji:@"😀"],
                        @'M' : [WandererEmojiFactory withEmoji:@"👹"],
                        @'!' : [WandererTextureFromFileFactory withFileName:@"dynamite"],
                        @'*' : [WandererEmojiFactory withEmoji:@"💎"],
-                       @'<' : [WandererEmojiFactory withEmoji:@"←" fgColor:[UIColor redColor]],
-                       @'>' : [WandererEmojiFactory withEmoji:@"→" fgColor:[UIColor redColor]],
+                       @'<' : [WandererEmojiFactory withEmoji:@"←" fg:[UIColor redColor]],
+                       @'>' : [WandererEmojiFactory withEmoji:@"→" fg:[UIColor redColor]],
                        @'X' : [WandererEmojiFactory withEmoji:@"🏠"],
                        @'S' : [WandererEmojiFactory withEmoji:@"👻"],
                        @'+' : [WandererCageFactory  withEmoji:@"💎"],
                        @'T' : [WandererEmojiFactory withEmoji:@"🚪"],
                        @'^' : [WandererEmojiFactory withEmoji:@"🎈"],
                        @'C' : [WandererEmojiFactory withEmoji:@"⏱"],
-                       @':' : [WandererEmojiFactory withEmoji:@"◼︎" fgColor:HTML_COLOR(0xB5A642)],
-                       @'#' : [WandererBlockFactory withBg:[UIColor brownColor] fg:[UIColor grayColor]],
-                       @'-' : [WandererBlockFactory withBg:[UIColor grayColor] fg:[UIColor whiteColor]],
+                       @':' : [WandererEmojiFactory withEmoji:@"◼︎" fg:HTML_COLOR(0xB5A642)],
+                       @'#' : [WandererBlockFactory withBg:[UIColor brownColor]    fg:[UIColor grayColor]],
+                       @'-' : [WandererBlockFactory withBg:[UIColor grayColor]     fg:[UIColor whiteColor]],
                        @'=' : [WandererBlockFactory withBg:[UIColor darkGrayColor] fg:[UIColor grayColor]],
-                       @'|' : [WandererBlockFactory withBg:[UIColor grayColor] fg:[UIColor whiteColor]],
+                       @'|' : [WandererBlockFactory withBg:[UIColor grayColor]     fg:[UIColor whiteColor]],
                        @'\\': [WandererBackslashFactory slash],
                        @'/' : [WandererForwardSlashFactory slash],
                        @'O' : [WandererTextureFromFileFactory withFileName:@"rock"]

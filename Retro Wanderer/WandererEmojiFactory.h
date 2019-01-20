@@ -27,7 +27,7 @@
 @property (nonatomic, retain) UIColor *bgColor;
 
 + (instancetype)withEmoji:(NSString *)emoji;
-+ (instancetype)withEmoji:(NSString *)emoji fgColor:(UIColor *)fgColor;
-+ (instancetype)withEmoji:(NSString *)emoji bgColor:(UIColor *)bgColor;
++ (instancetype)withEmoji:(NSString *)emoji fg:(UIColor *)fgColor;
++ (instancetype)withEmoji:(NSString *)emoji bg:(UIColor *)bgColor;
 
 @end

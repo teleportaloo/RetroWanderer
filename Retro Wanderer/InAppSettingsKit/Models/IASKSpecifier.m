@@ -388,7 +388,7 @@
 
 - (BOOL)adjustsFontSizeToFitWidth {
 	NSNumber *boxedResult = [_specifierDict objectForKey:kIASKAdjustsFontSizeToFitWidth];
-	return !boxedResult || [boxedResult boolValue];
+	return boxedResult==nil || [boxedResult boolValue];
 }
 
 - (NSTextAlignment)textAlignment

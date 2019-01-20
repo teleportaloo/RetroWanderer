@@ -25,6 +25,9 @@
 #import "HelpScreen.h"
 #import "DebugLogging.h"
 #import "SettingsTableViewController.h"
+#import "AugmentedSegmentControl.h"
+#import "DirectionClusterControl.h"
+#import "NSString+formatting.h"
 
 #define kCurrentLevel       @"current_level"
 //#define kAnimationDuration  @"animation_duration"
@@ -42,30 +45,12 @@
 #define kLeftHanded         @"left_handed"
 #define kShowHelp           @"show_help"
 #define kAchievements       @"achievements2.plist"
+#define kMoves              @"moves"
+#define kDate               @"date"
 
 
 #define kSavedMoves         @"moves%d.plist"
 #define kSavedMovesKeys     @"keys"
-#define kButtonA            @"(A)"
-#define kButtonB            @"(B)"
-#define kButtonX            @"(X)"
-#define kButtonY            @"(Y)"
-#define kButtonL1           @"(L1)"
-#define kButtonR1           @"(R1)"
-#define kButtonL            @"(←)"
-#define kButtonR            @"(→)"
-#define kButtonU            @"(↑)"
-#define kButtonD            @"(↓)"
-#define kButtonPause        @"⏸"
-#define kControllerText     @"Controller Connected. Use:\n● D-pad to move,\n● button 'A' to skip.\n"
-
-#define kMoveKeyUp          'k'
-#define kMoveKeyDown        'j'
-#define kMoveKeyLeft        'h'
-#define kMoveKeyRight       'l'
-#define kMoveKeySkip        ' '
-#define kMoveQuit           'q'
-
 
 
 #define kSegStep            0
@@ -75,12 +60,13 @@
 @implementation GameViewController
 
 @dynamic currentScreen;
+@synthesize gameCenter = _gameCenter;
 
 -(void)initScreen
 {
     int maxmoves = 0;
     _unsavedMoves = NO;
-    [self controlButtonUp:nil];
+    [self actionButtonUp];
     
     if (_num>self.highest)
     {
@@ -92,6 +78,7 @@
     NSString *partialScreenPath = [screenPath substringToIndex:screenPath.length-1];
     
     self.buttonActionMap = [NSMutableDictionary dictionary];
+    self.cellTextButton  = [NSMutableDictionary dictionary];
     
     _screen_score = 0;
     
@@ -105,9 +92,11 @@
         initscreen(&_num, &_screen_score, &_bell, maxmoves, (char*)"kjhl", (game*)&_game);
         
         self.keyStrokes = [NSMutableString string];
-        self.previousKeyStrokes = [self getSavedMoves];
+        self.savedKeyStrokes = [self getSavedMoves:_num];
         self.playbackPosition = 0;
-        [self updateLevelButtons];
+        [self updateButtons];
+        [self.display flashingPlayer];
+        _normalFlashing = YES;
     }
 }
 
@@ -125,7 +114,7 @@
      }];
     
     return total;
-
+    
 }
 
 - (void)saveLevel
@@ -137,16 +126,68 @@
     [self getSettings];
 }
 
--(void)setButtonForController:(UIButton *)button title:(NSString *)title buttonName:(NSString *)buttonName buttonOnRight:(bool)buttonOnRight
+-(void)setButtonForController:(UIButton *)button title:(NSString *)title buttonName:(NSString *)buttonName keyName:(NSString *)keyName buttonOnRight:(bool)buttonOnRight space:(NSString *)space
 {
-    [self setButtonForController:button title:title buttonName:buttonName buttonOnRight:buttonOnRight controllerFont:nil regularFont:nil];
+    [self setButtonForController:button title:title buttonName:buttonName keyName:(NSString *)keyName buttonOnRight:buttonOnRight controllerFont:nil regularFont:nil space:space];
 }
 
--(void)setButtonForController:(UIButton *)button title:(NSString *)title buttonName:(NSString *)buttonName buttonOnRight:(bool)buttonOnRight controllerFont:(UIFont *)controllerFont regularFont:(UIFont *)regularFont
+- (NSString*)cellText:(NSString *)text buttonOnRight:(bool)right
+{
+    NSString *button = self.cellTextButton[text];
+    if (!button)
+    {
+        return text;
+    }
+    else if (!right)
+    {
+        return [NSString stringWithFormat:@"%@ %@", button, text];
+    }
+    return [NSString stringWithFormat:@"%@ %@", text, button];
+}
+
+-(void)setButtonForCell:(NSString *)cellText buttonName:(NSString *)buttonName action:(ButtonAction)action
 {
     if (self.controller)
     {
-        [button setTitle:buttonOnRight ? [NSString stringWithFormat:@"%@ %@", title, buttonName] : [NSString stringWithFormat:@"%@ %@", buttonName, title] forState:UIControlStateNormal];
+        self.cellTextButton[cellText] = buttonName;
+        self.buttonActionMap[buttonName]= action;
+    }
+    else
+    {
+        self.cellTextButton[cellText] = nil;
+        self.buttonActionMap[buttonName] = nil;
+    }
+}
+
+-(void)setButtonForController:(UIButton *)button title:(NSString *)title buttonName:(NSString *)buttonName keyName:(NSString *)keyName buttonOnRight:(bool)buttonOnRight controllerFont:(UIFont *)controllerFont regularFont:(UIFont *)regularFont space:(NSString *)space
+{
+    __weak typeof(self) weakSelf = self;
+    
+    self.buttonActionMap[keyName]=^{
+        
+        if (!button.hidden && button.enabled)
+        {
+            NSArray<NSString*> *actions = [button actionsForTarget:weakSelf forControlEvent:UIControlEventTouchUpInside];
+            
+            if (actions!=nil && actions.count>0)
+            {
+                SEL sel = NSSelectorFromString(actions.firstObject);
+                IMP imp = [weakSelf methodForSelector:sel];
+                void (*func)(id, SEL, id) = (void (*)(id, SEL, id))imp;
+                func(weakSelf, sel, button);
+            }
+        }
+    };
+    
+    if (space == nil)
+    {
+        space = @"";
+    }
+    
+    if (self.controller)
+    {
+        
+        [button setTitle:buttonOnRight ? [NSString stringWithFormat:@"%@%@ %@%@", space, title, buttonName,space] : [NSString stringWithFormat:@"%@%@ %@%@", space,buttonName, title, space] forState:UIControlStateNormal];
         
         if (controllerFont)
         {
@@ -154,27 +195,13 @@
         }
         
         button.titleLabel.adjustsFontSizeToFitWidth = YES;
-        __weak typeof(self) weakSelf = self;
         
-        self.buttonActionMap[buttonName]=^{
-            
-            if (!button.hidden && button.enabled)
-            {
-                NSArray<NSString*> *actions = [button actionsForTarget:weakSelf forControlEvent:UIControlEventTouchUpInside];
-            
-                if (actions!=nil && actions.count>0)
-                {
-                    SEL sel = NSSelectorFromString(actions.firstObject);
-                    IMP imp = [weakSelf methodForSelector:sel];
-                    void (*func)(id, SEL, id) = (void (*)(id, SEL, id))imp;
-                    func(weakSelf, sel, button);
-                }
-            }
-        };
+        self.buttonActionMap[buttonName] = self.buttonActionMap[keyName];
     }
     else
     {
-        [button setTitle:title forState:UIControlStateNormal];
+        [button setTitle:[NSString stringWithFormat:@"%@%@%@", space, title,space] forState:UIControlStateNormal];
+        self.buttonActionMap[buttonName] = nil;
         
         if (regularFont)
         {
@@ -184,61 +211,77 @@
     }
 }
 
--(void)setButtonsForSeg:(UISegmentedControl*)control titles:(NSArray<NSString*> *)titles buttonNames:(NSArray<NSString*> *)buttonNames
+-(void)setButtonsForSeg:(AugmentedSegmentControl*)control titles:(NSArray<NSString*> *)titles firstButton:(NSString*)first restButton:(NSString*)rest restKey:(NSString *)key
 {
-    if (self.controller)
-    {
-        for (int i = 0; i<buttonNames.count; i++)
+    __weak typeof(self) weakSelf = self;
+    
+    self.buttonActionMap[key] = ^{
+        
+        switch (control.selectedSegmentIndex)
         {
-            [control setTitle:[NSString stringWithFormat:@"%@ %@", buttonNames[i], titles[i]] forSegmentAtIndex:i];
+                
+            case kSegStep:
+                control.selectedSegmentIndex = kSegSlowMo;
+                break;
+            case kSegSlowMo:
+                control.selectedSegmentIndex = kSegSlow;
+                break;
+            case kSegSlow:
+                control.selectedSegmentIndex = kSegFast;
+                break;
+            case kSegFast:
+                control.selectedSegmentIndex = kSegSlowMo;
+                break;
         }
         
-        // Assume first button is already sorted, and the other two are the same
-        __weak typeof(self) weakSelf = self;
+        NSArray<NSString*> *actions = [control actionsForTarget:weakSelf forControlEvent:UIControlEventValueChanged];
         
-        self.buttonActionMap[buttonNames[0]] = nil;
-        self.buttonActionMap[buttonNames[1]]=^{
-            
-            switch (control.selectedSegmentIndex)
-            {
-                
-                case kSegStep:
-                    control.selectedSegmentIndex = kSegSlowMo;
-                    break;
-                case kSegSlowMo:
-                    control.selectedSegmentIndex = kSegSlow;
-                    break;
-                case kSegSlow:
-                    control.selectedSegmentIndex = kSegFast;
-                    break;
-                case kSegFast:
-                    control.selectedSegmentIndex = kSegSlowMo;
-                    break;
-            }
-            
-            NSArray<NSString*> *actions = [control actionsForTarget:weakSelf forControlEvent:UIControlEventValueChanged];
-            
-            if (actions!=nil && actions.count>0)
-            {
-                SEL sel = NSSelectorFromString(actions.firstObject);
-                IMP imp = [weakSelf methodForSelector:sel];
-                void (*func)(id, SEL, id) = (void (*)(id, SEL, id))imp;
-                func(weakSelf, sel, control);
-            }
-        };
+        if (actions!=nil && actions.count>0)
+        {
+            SEL sel = NSSelectorFromString(actions.firstObject);
+            IMP imp = [weakSelf methodForSelector:sel];
+            void (*func)(id, SEL, id) = (void (*)(id, SEL, id))imp;
+            func(weakSelf, sel, control);
+        }
+    };
+    
+    
+    
+    if (self.controller)
+    {
+        
+        control.originalTitles = titles;
+        control.firstSegmentButton = first;
+        control.otherSegmentButtons = rest;
+        
+        // Assume first button is already sorted, and the other two are the same
+        
+        
+        self.buttonActionMap[first] = nil;       // Button A is special. :-)
+        
+        
+        self.buttonActionMap[rest] = self.buttonActionMap[key];
     }
     else
     {
-        for (int i = 0; i<buttonNames.count; i++)
+        control.originalTitles = nil;
+        control.firstSegmentButton = nil;
+        control.otherSegmentButtons = nil;
+        
+        for (int i = 0; i<titles.count; i++)
         {
             [control setTitle:titles[i] forSegmentAtIndex:i];
         }
+        self.buttonActionMap[first] = nil;
+        self.buttonActionMap[rest] = nil;
     }
+    
+    [control setSelectedSegmentIndex:control.selectedSegmentIndex];
 }
 
--(void)hideSegment
+- (void)hideSegment:(UISegmentedControl *)ctrl;
 {
-    self.playbackSpeedSeg.hidden = YES;
+    ctrl.hidden = YES;
     self.buttonActionMap[kButtonU] = nil;
     self.buttonActionMap[kButtonL] = nil;
     self.buttonActionMap[kButtonR] = nil;
@@ -250,147 +293,9 @@
     return self.achievements[[NSString stringWithFormat:@"%d", num]];
 }
 
-- (void)updateLevelButtons
+- (void)updateButtons
 {
     
-    self.previousButton.hidden = !(_num > 0);
-    self.nextButton.hidden = !(_num < self.highest);
-    
-    [self setButtonForController:self.previousButton title:@"⇤" buttonName:kButtonL1 buttonOnRight:YES controllerFont:[UIFont systemFontOfSize:15] regularFont:[UIFont systemFontOfSize:26]];
-    [self setButtonForController:self.nextButton     title:@"⇥" buttonName:kButtonR1 buttonOnRight:NO  controllerFont:[UIFont systemFontOfSize:15] regularFont:[UIFont systemFontOfSize:26]];
-    
-    NSDictionary *achievement = [self achievementForScreen:_num];
-    
-    if (achievement)
-    {
-        NSDate *firstDone = achievement[kAchievementDate];
-        NSNumber *score   = achievement[kAchievementScore];
-        
-        if (firstDone)
-        {
-            self.achievementLabel.text = [NSString stringWithFormat:@"Completed on %@ with screen score: %ld",
-                                          [NSDateFormatter localizedStringFromDate:firstDone
-                                                                         dateStyle:NSDateFormatterShortStyle
-                                                                         timeStyle:NSDateFormatterShortStyle],
-                                          score!=nil ? score.longValue : 0
-                                          ];
-        }
-    }
-    else
-    {
-        self.achievementLabel.text = @"";
-    }
-    
-    self.totalScoreLabel.text = [NSString stringWithFormat:@"Total score: %ld", _total_score];
-    
-    switch (self.playbackState)
-    {
-        case PlaybackStepping:
-            self.playbackButton.hidden = NO;
-            [self setButtonForController:self.playbackButton title:@"Stop playback" buttonName:kButtonPause buttonOnRight:YES];
-            self.buttonActionMap[kButtonY] = nil;
-            
-            [self setButtonsForSeg:self.playbackSpeedSeg titles:@[@"Step", @"Slow Mo", @"Normal", @"Fast"] buttonNames:@[kButtonA, kButtonX, kButtonX, kButtonX]];
-            self.playbackSpeedSeg.hidden = NO;
-            self.saveCheckpointButton.hidden = YES;
-            self.playbackMoves.hidden = NO;
-            if (self.controllerConnected)
-            {
-                self.controllerLabel.text = @"Controller Connected. Use D-pad or Button 'A' to playback next move.";
-                self.controllerLabel.hidden = NO;
-            }
-            else
-            {
-                self.controllerLabel.hidden = YES;
-            }
-            break;
-        case PlaybackOverrun:
-        case PlaybackRecording:
-            if (self.previousKeyStrokes)
-            {
-                [self setButtonForController:self.playbackButton title:@"Start playback" buttonName:kButtonY buttonOnRight:YES];
-                self.playbackButton.hidden = NO;
-                self.buttonActionMap[kButtonPause] = nil;
-            }
-            else
-            {
-                self.playbackButton.hidden = YES;
-            }
-            [self hideSegment];
-            self.saveCheckpointButton.hidden = !_unsavedMoves;
-            [self setButtonForController:self.saveCheckpointButton title:@"Save checkpoint" buttonName:kButtonX buttonOnRight:YES];
-            self.playbackMoves.hidden = YES;
-            if (self.controllerConnected)
-            {
-                self.controllerLabel.text = kControllerText;
-                self.controllerLabel.hidden = NO;
-            }
-            else
-            {
-                self.controllerLabel.hidden = YES;
-            }
-
-            break;
-        case PlaybackDone:
-            self.playbackButton.hidden = YES;
-            [self hideSegment];
-            self.saveCheckpointButton.hidden = !_unsavedMoves;
-            [self setButtonForController:self.saveCheckpointButton title:@"Save checkpoint" buttonName:kButtonX buttonOnRight:YES];
-            self.playbackMoves.hidden = YES;
-            break;
-    }
-    
-    [self setButtonForController:self.startOverButton title:@"Start over" buttonName:kButtonB buttonOnRight:YES];
-    
-    self.startOverButton.hidden = !((self.keyStrokes.length!=0) || self.playbackState==PlaybackDone);
-    
-    if (!self.controllerConnected)
-    {
-        self.controllerLabel.hidden = YES;
-        
-        if (self.playbackState!=PlaybackStepping && self.playbackState!=PlaybackDone)
-        {
-            
-            self.upButton.hidden = NO;
-            self.downButton.hidden = NO;
-            self.leftButton.hidden = NO;
-            self.rightButton.hidden = NO;
-            self.stayButton.hidden = NO;
-            self.stepButton.hidden = YES;
-            
-            
-        }
-        else if (self.playbackSpeedSeg.selectedSegmentIndex != kSegStep)
-        {
-            self.upButton.hidden = YES;
-            self.downButton.hidden = YES;
-            self.leftButton.hidden = YES;
-            self.rightButton.hidden = YES;
-            self.stayButton.hidden = YES;
-            self.stepButton.hidden = YES;
-            
-        }
-        else
-        {
-            self.upButton.hidden = YES;
-            self.downButton.hidden = YES;
-            self.leftButton.hidden = YES;
-            self.rightButton.hidden = YES;
-            self.stayButton.hidden = YES;
-            self.stepButton.hidden = NO;
-        }
-    }
-    else
-    {
-        self.controllerLabel.hidden = NO;
-        
-        self.upButton.hidden    = YES;
-        self.downButton.hidden  = YES;
-        self.leftButton.hidden  = YES;
-        self.rightButton.hidden = YES;
-        self.stayButton.hidden  = YES;
-        
-    }
 }
 
 - (int)nextUndoneScreen
@@ -416,9 +321,8 @@
     {
         _num++;
         [self saveLevel];
-        [self playbackRecording];
+        [self setStateRecording];
         [self initScreen];
-        
     }
 }
 
@@ -446,9 +350,10 @@
         
         [alert addAction:[self actionWithTitle:@"OK" style:UIAlertActionStyleDestructive
                                     buttonName:kButtonA
+                                       keyName:kKeyReturn
                                        handler:^(UIAlertAction * action) {
                                            [self stopPlayback:^{
-                                               _num = screen;
+                                               self->_num = screen;
                                                [self saveLevel];
                                                [self initScreen];
                                                
@@ -461,6 +366,7 @@
         
         [alert addAction:[self actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel
                                     buttonName:kButtonX
+                                       keyName:UIKeyInputEscape
                                        handler:^(UIAlertAction * action) {
                                            if (review)
                                            {
@@ -487,37 +393,38 @@
 - (UIAlertAction *)actionWithTitle:(NSString *)title
                              style:(UIAlertActionStyle)style
                         buttonName:(NSString *)buttonName
+                           keyName:(NSString*)key
                            handler:(AlertBlock)handler
 {
-    if (self.controller)
-    {
-        __block GameViewController*weakSelf = self;
+    __block GameViewController*weakSelf = self;
+    
+    AlertBlock metaHandler = ^(UIAlertAction * action) {
         
-        AlertBlock metaHandler = ^(UIAlertAction * action) {
+        void (^completionBlock)(void) = ^{
             
-            void (^completionBlock)(void) = ^{
-                
-                [weakSelf.alertActionMap removeAllObjects];
-                
-                if (handler)
-                {
-                    handler(action);
-                }
-            };
+            [weakSelf.alertActionMap removeAllObjects];
             
-            if (weakSelf.presentedViewController)
+            if (handler)
             {
-                [weakSelf dismissViewControllerAnimated:YES completion:completionBlock];
-            }
-            else
-            {
-                completionBlock();
+                handler(action);
             }
         };
-
+        
+        if (weakSelf.presentedViewController)
+        {
+            [weakSelf dismissViewControllerAnimated:YES completion:completionBlock];
+        }
+        else
+        {
+            completionBlock();
+        }
+    };
     
+    self.alertActionMap[key] = metaHandler;
+    
+    if (self.controller)
+    {
         self.alertActionMap[buttonName] = metaHandler;
-    
         return [UIAlertAction actionWithTitle:[NSString stringWithFormat:@"%@ %@", buttonName, title] style:style handler: metaHandler];
     }
     return [UIAlertAction actionWithTitle:title style:style handler: handler];
@@ -533,12 +440,28 @@
     }
 }
 
+- (void)displayPlaybackMoves:(int)moves
+{
+    
+}
+
+- (void)displayBusyText:(NSString *)text
+{
+    
+}
+
 -(void)makeMove:(char)key
 {
     
     if (self.presentedViewController==nil)
     {
-        __block bool checkpointDone = NO;
+        if (_normalFlashing)
+        {
+            _normalFlashing = NO;
+            [self.display normalPlayer];
+        }
+        
+        __block bool playbackDone = NO;
         
         if (self.playbackState == PlaybackRecording)
         {
@@ -555,21 +478,22 @@
             }
         }
         
-        if (self.playbackState == PlaybackStepping && self.previousKeyStrokes!=nil)
+        if (self.playbackState == PlaybackStepping && self.playbackKeyStrokes!=nil)
         {
-            if (self.playbackPosition < self.previousKeyStrokes.length && key!=kMoveQuit)
+            if (self.playbackPosition < self.playbackKeyStrokes.length && key!=kMoveQuit)
             {
-                key = (char)[self.previousKeyStrokes characterAtIndex:self.playbackPosition];
-                self.playbackMoves.text = [NSString stringWithFormat:@"Playback moves: %d",(int)(self.previousKeyStrokes.length - self.playbackPosition)];
+                key = (char)[self.playbackKeyStrokes characterAtIndex:self.playbackPosition];
+                
+                [self displayPlaybackMoves:(int)(self.playbackKeyStrokes.length - self.playbackPosition)];
                 self.playbackPosition++;
             }
             else
             {
-                checkpointDone = YES;
+                playbackDone = YES;
             }
         }
         
-        if (self.playbackState != PlaybackDone && !checkpointDone)
+        if (self.playbackState != PlaybackDone && !playbackDone)
         {
             char *howDead = onemove(&_num, &_screen_score, &_bell, (char*)"kjhl", (game*)&_game, key);
             
@@ -585,9 +509,9 @@
                 
                 if (dead !=nil && self.playbackState!=PlaybackStepping)
                 {
-                    if (_game.quit)
+                    if (self->_game.quit)
                     {
-                        [weakSelf playbackRecording];
+                        [weakSelf setStateRecording];
                         [weakSelf initScreen];
                     }
                     else
@@ -600,32 +524,53 @@
                                                                                        message:[NSString stringWithFormat:@"You were killed by %@", dead]
                                                                                 preferredStyle:UIAlertControllerStyleAlert];
                         
-                        UIAlertAction* defaultAction = [self actionWithTitle:@"OK" style:UIAlertActionStyleDefault
-                                                                  buttonName:kButtonA
-                                                                     handler:^(UIAlertAction * action) {
-                                                                         [weakSelf playbackRecording];
-                                                                         [weakSelf initScreen];
-                                                                     }
-                                                        ];
+                        [alert addAction:[self actionWithTitle:@"Start over" style:UIAlertActionStyleDefault
+                                                    buttonName:kButtonA
+                                                       keyName:kKeyReturn
+                                                       handler:^(UIAlertAction * action) {
+                                                           [weakSelf setStateRecording];
+                                                           [weakSelf initScreen];
+                                                       }
+                                          ]];
                         
-                        [alert addAction:defaultAction];
+                        if (self.keyStrokes && self.keyStrokes.length > 1)
+                        {
+                            [alert addAction:[self actionWithTitle:@"Playback moves to just before you died" style:UIAlertActionStyleDefault
+                                                        buttonName:kButtonA
+                                                           keyName:kKeyReturn
+                                                           handler:^(UIAlertAction * action) {
+                                                               [weakSelf startPlaybackWithKeyStrokes:[self.keyStrokes substringToIndex:self.keyStrokes.length-1]];
+                                                           }
+                                              ]];
+                        }
+                        
+                        [alert addAction:[self actionWithTitle:@"Show me the screen" style:UIAlertActionStyleDefault
+                                                    buttonName:kButtonB
+                                                       keyName:UIKeyInputEscape
+                                                       handler:^(UIAlertAction * action) {
+                                                           self.playbackState = PlaybackDead;
+                                                           [self updateButtons];
+                                                       }
+                                          ]];
+                        
                         [self presentViewController:alert animated:YES completion:nil];
                     }
                 }
-                else if (_game.finished)
+                else if (self->_game.finished)
                 {
-                    NSString *key = [NSString stringWithFormat:@"%d", _num];
+                    NSString *key = [NSString stringWithFormat:@"%d", self->_num];
                     bool better = NO;
                     bool increased = NO;
-                    checkpointDone = NO;
+                    playbackDone = NO;
                     [self.display happyPlayer];
                     
                     if (self.achievements[key]==nil)
                     {
                         self.achievements[key] = @{
                                                    kAchievementDate : [NSDate date],
-                                                   kAchievementScore : @(_screen_score) };
+                                                   kAchievementScore : @(self->_screen_score) };
                         
+                        [weakSelf mergeAchievement:self->_num remote:[NSUbiquitousKeyValueStore defaultStore] localChanged:nil];
                         [weakSelf saveAchievements];
                         [weakSelf writeSavedMoves];
                         increased = YES;
@@ -634,12 +579,12 @@
                     {
                         NSNumber *previousScore = weakSelf.achievements[key][kAchievementScore];
                         
-                        if (_screen_score > previousScore.longValue
-                            || (_screen_score == previousScore.longLongValue && self.keyStrokes.length < self.previousKeyStrokes.length ))
+                        if (self->_screen_score > previousScore.longValue
+                            || (self->_screen_score == previousScore.longLongValue && self.keyStrokes.length < self.savedKeyStrokes.length ))
                         {
                             weakSelf.achievements[key] = @{
                                                            kAchievementDate : [NSDate date],
-                                                           kAchievementScore : @(_screen_score) };
+                                                           kAchievementScore : @(self->_screen_score) };
                             
                             [weakSelf saveAchievements];
                             [weakSelf writeSavedMoves];
@@ -649,11 +594,11 @@
                     
                     DEBUG_LOGO(self.achievements);
                     
-                    _total_score = [self calculateTotalScore];
+                    self->_total_score = [self calculateTotalScore];
                     
-                    if (_gameCenter && _total_score > 0)
+                    if (self->_gameCenter && self->_total_score > 0)
                     {
-                        [[GameCenterMgr sharedManager] reportScore:_total_score];
+                        [[GameCenterMgr sharedManager] reportScore:self->_total_score];
                         [[GameCenterMgr sharedManager] reportAchievements:self.achievements];
                     }
                     
@@ -663,15 +608,15 @@
                         
                         if (better)
                         {
-                            message = [NSString stringWithFormat:@"Screen %d completed, better than last time. The total score is now %ld!", _num, _total_score];
+                            message = [NSString stringWithFormat:@"Screen %d completed, better than last time. The total score is now %ld!", self->_num, self->_total_score];
                         }
                         else if (increased)
                         {
-                            message = [NSString stringWithFormat:@"Screen %d completed. The total score is now %ld!", _num, _total_score];
+                            message = [NSString stringWithFormat:@"Screen %d completed. The total score is now %ld!", self->_num, self->_total_score];
                         }
                         else
                         {
-                            message = [NSString stringWithFormat:@"Screen %d completed, but the total score is unchanged.", _num];
+                            message = [NSString stringWithFormat:@"Screen %d completed, but the total score is unchanged.", self->_num];
                         }
                         
                         UIAlertController* alert = [UIAlertController alertControllerWithTitle:@"You did it!"
@@ -682,29 +627,32 @@
                         
                         action = [weakSelf actionWithTitle:@"Playback moves" style:UIAlertActionStyleDefault
                                                 buttonName:kButtonY
+                                                   keyName:kKeyP
                                                    handler:^(UIAlertAction * action) {
-                                                       [self startPlayback];
+                                                       [self startPlaybackWithKeyStrokes:self.savedKeyStrokes];
                                                    }
                                   ];
-                                  
-                                  
+                        
+                        
                         [alert addAction:action];
                         
                         int next = [self nextUndoneScreen];
-
+                        
                         
                         if (next > 0)
                         {
                             action = [weakSelf actionWithTitle:@"Next Uncompleted Screen" style:UIAlertActionStyleDestructive
                                                     buttonName:kButtonA
+                                                       keyName:kKeyN
                                                        handler:^(UIAlertAction * action) {
-                                                           _unsavedMoves = NO;
+                                                           self->_unsavedMoves = NO;
                                                            [self changeToScreen:next review:YES];
                                                        }
                                       ];
                         } else {
                             action = [weakSelf actionWithTitle:@"OK" style:UIAlertActionStyleDestructive
                                                     buttonName:kButtonA
+                                                       keyName:kKeyReturn
                                                        handler:^(UIAlertAction * action) {
                                                            [self requestReview];
                                                        }
@@ -719,56 +667,60 @@
                     }
                     else
                     {
-                        _unsavedMoves = NO;
+                        self->_unsavedMoves = NO;
                         weakSelf.playbackState = PlaybackDone;
-                        [weakSelf controlButtonUp:nil];
+                        [weakSelf actionButtonUp];
                         [self getSettings];
-                        [weakSelf updateLevelButtons];
+                        [weakSelf updateButtons];
                     }
                 }
                 else
                 {
-                    if (!_unsavedMoves)
+                    if (!self->_unsavedMoves)
                     {
-                        _unsavedMoves = YES;
-                        [weakSelf updateLevelButtons];
+                        self->_unsavedMoves = YES;
+                        [weakSelf updateButtons];
                     }
                 }
                 
-                if (checkpointDone)
+                if (playbackDone)
                 {
-                    _unsavedMoves = NO;
-                    weakSelf.keyStrokes = [self.previousKeyStrokes mutableCopy];
-                    [weakSelf controlButtonUp:nil];
-                    [weakSelf playbackRecording];
-                    [weakSelf updateLevelButtons];
+                    self->_unsavedMoves = NO;
+                    weakSelf.keyStrokes = [self.playbackKeyStrokes mutableCopy];
+                    [weakSelf actionButtonUp];
+                    [weakSelf setStateRecording];
+                    [weakSelf updateButtons];
                 }
             }];
             
             
 #ifdef DEBUGLOGGING
-            self.busyLabel.text = [NSString stringWithFormat:@"%d %lu %lu", self.display.animationCount, (unsigned long)self.display.fastMoveCache.count, (unsigned long)self.display.cacheHits];
+            [self displayBusyText:[NSString stringWithFormat:@"%d %lu %lu", self.display.animationCount, (unsigned long)self.display.fastMoveCache.count, (unsigned long)self.display.cacheHits]];
 #endif
         }
         
-        if (checkpointDone)
+        if (playbackDone)
         {
             _unsavedMoves = NO;
-            self.keyStrokes = [self.previousKeyStrokes mutableCopy];
-            [self controlButtonUp:nil];
-            [self playbackRecording];
-            [self updateLevelButtons];
+            self.keyStrokes = [self.playbackKeyStrokes mutableCopy];
+            [self actionButtonUp];
+            [self setStateRecording];
+            [self updateButtons];
         }
     }
 }
 
-
-
--(NSString*)getSavedMoves
+- (NSString*)getMovesFileName:(int)screen
 {
     NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
     NSString *documentsDirectory = paths.firstObject;
-    NSString *fullPathName = [documentsDirectory stringByAppendingPathComponent:[NSString stringWithFormat:kSavedMoves, _num]];
+    NSString *fullPathName = [documentsDirectory stringByAppendingPathComponent:[NSString stringWithFormat:kSavedMoves, screen]];
+    return fullPathName;
+}
+
+-(NSString*)getSavedMoves:(int)screen
+{
+    NSString *fullPathName = [self getMovesFileName:screen];
     
     if ([[NSFileManager defaultManager] fileExistsAtPath:fullPathName])
     {
@@ -831,25 +783,34 @@
     }
 }
 
--(void)writeSavedMoves
+- (void)writeSavedMoves
 {
-    if (self.keyStrokes && self.keyStrokes.length > 0)
+    [self writeSavedMoves:self.keyStrokes screen:_num];
+    self.savedKeyStrokes = [self.keyStrokes copy];
+    [self mergeMove:_num remote:[NSUbiquitousKeyValueStore defaultStore]];
+}
+
+-(void)writeSavedMoves:(NSString *)moves screen:(int)screen
+{
+    if (moves && moves.length > 0)
     {
         NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
         NSString *documentsDirectory = paths.firstObject;
-        NSString *fullPathName = [documentsDirectory stringByAppendingPathComponent:[NSString stringWithFormat:kSavedMoves, _num]];
-    
+        NSString *fullPathName = [documentsDirectory stringByAppendingPathComponent:[NSString stringWithFormat:kSavedMoves, screen]];
+        
         NSMutableString *compressed = [NSMutableString string];
         
         int repeat = 0;
         unichar ch  = 0;
-        unichar lastch = [self.keyStrokes characterAtIndex:0];
+        unichar lastch = [moves characterAtIndex:0];
         
-        for (int i=0; i<self.keyStrokes.length; i++)
+        for (int i=0; i<moves.length; i++)
         {
-            ch = [self.keyStrokes characterAtIndex:i];
+            ch = [moves characterAtIndex:i];
             
-            if (ch==lastch)
+            // We may be passing an already RLE string through here to the
+            // cloud so don't do it again.
+            if (ch==lastch && !isnumber(ch))
             {
                 repeat++;
             }
@@ -870,8 +831,6 @@
         
         
         [savedMoves writeToFile:fullPathName atomically:YES];
-        
-        self.previousKeyStrokes = [self.keyStrokes copy];
     }
 }
 
@@ -923,6 +882,22 @@
     return showHelp;
 }
 
+
+- (void)displayLeftHanded:(bool)left
+{
+    
+}
+
+- (void)displayGameCenter:(bool)enabled
+{
+    
+}
+
+- (void)displayDonated:(bool)donated capable:(bool)capable processing:(bool)processing
+{
+    
+}
+
 - (void)getSettings
 {
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
@@ -943,7 +918,7 @@
     
     DEBUG_LOGF(self.display.animationDuration);
     DEBUG_LOGF(self.rapidFireDuration);
-
+    
     // NSLog(@"duration %f\n", self.display.animationDuration);
     
     _num = (int)[defaults integerForKey:kCurrentLevel];
@@ -958,18 +933,28 @@
     else if (!oldGameCenter)
     {
         [[GameCenterMgr sharedManager] authenticatePlayer:^{
-                [[GameCenterMgr sharedManager] reportScore:_total_score];
+            if (self->_total_score > 0)
+            {
+                [[GameCenterMgr sharedManager] reportScore:self->_total_score];
                 [[GameCenterMgr sharedManager] reportAchievements:self.achievements];
+            }
         }];
     }
     
     bool oldRetro = [WandererTile retro];
-
+    
     [WandererTile setRetro: [defaults  boolForKey:kRetro]];
     
     if (oldRetro != [WandererTile retro])
     {
-        [self.display ad_init_completed];
+        if (!_busy)
+        {
+            [self.display ad_init_completed];
+        }
+        else
+        {
+            _reinitForRetro = YES;
+        }
     }
     
     [[NSNotificationCenter defaultCenter] addObserver:self
@@ -977,42 +962,28 @@
                                                  name:NSUserDefaultsDidChangeNotification
                                                object:nil];
     
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:kLeftHanded] && self.view)
-    {
-        CGRect frame = self.controlClusterView.frame;
-        
-        self.controlClusterView.frame = CGRectMake(0,
-                                                   frame.origin.y, frame.size.width, frame.size.height);
-        
-        frame = self.screenClusterView.frame;
-        
-        self.screenClusterView.frame = CGRectMake(self.view.frame.size.width-frame.size.width,
-                                                  frame.origin.y, frame.size.width, frame.size.height);
-    }
-    else
-    {
-        CGRect frame = self.controlClusterView.frame;
-        
-        self.controlClusterView.frame = CGRectMake(self.view.frame.size.width-frame.size.width,
-                                                   frame.origin.y, frame.size.width, frame.size.height);
-        
-        frame = self.screenClusterView.frame;
-        
-        self.screenClusterView.frame = CGRectMake(0,
-                                                  frame.origin.y, frame.size.width, frame.size.height);
-
-    }
+    [self displayLeftHanded:[[NSUserDefaults standardUserDefaults] boolForKey:kLeftHanded] && self.view];
     
-    self.highScoresButton.hidden = !_gameCenter;
-    self.achievementsButton.hidden = !_gameCenter;
-    self.donateButton.hidden = _donated || ![SKPaymentQueue canMakePayments];
+    [self displayGameCenter:_gameCenter];
     
-    if (_donated)
-    {
-        self.thanksLabel.text = @"❤️😀";
-    }
-    self.thanksLabel.hidden  = !_donated;
+    [self displayDonated:_donated capable:[SKPaymentQueue canMakePayments] processing:NO];
+    
+    
+}
 
+- (bool)showPrevScreen
+{
+    return (_num > 0);
+}
+
+- (bool)showNextScreen
+{
+    return (_num < self.highest);
+}
+
+- (void)displaySetLabels
+{
+    
 }
 
 - (void)viewDidLoad {
@@ -1022,10 +993,15 @@
     
     
     // For testing donations
+    /*
 #ifdef DEBUGLOGGING
     [[NSUserDefaults standardUserDefaults] setBool:NO forKey:kDonated];
     DEBUG_LOG(@"Remvoed donation!");
+    
+    // NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    // [defaults setBool:YES forKey:kShowHelp];
 #endif
+     */
     
     [self getAchievements];
     
@@ -1034,71 +1010,385 @@
     // Load the SKScene from 'GameScene.sks'
     GameScene *scene = (GameScene *)[SKScene nodeWithFileNamed:@"GameScene"];
     
-    
-    
     // Set the scale mode to scale to fit the window
     scene.scaleMode = SKSceneScaleModeAspectFit;
     scene.controller = self;
-    
-    SKView *skView = (SKView *)self.view;
-    skView.allowsTransparency = YES;
+    self.spriteView.allowsTransparency = YES;
     scene.backgroundColor = [UIColor clearColor];
     
     // Present the scene
-    [skView presentScene:scene];
+    [self.spriteView presentScene:scene];
     
     DEBUG_ONLY(
-               skView.showsFPS = YES;
-               skView.showsNodeCount = YES;
-               skView.showsDrawCount = YES;
-               skView.showsQuadCount = YES;
-    )
+               self.spriteView.showsFPS = YES;
+               self.spriteView.showsNodeCount = YES;
+               self.spriteView.showsDrawCount = YES;
+               self.spriteView.showsQuadCount = YES;
+               )
     
     NSURL *defaultPrefsFile = [[NSBundle mainBundle]
                                URLForResource:@"DefaultPreferences" withExtension:@"plist"];
     NSDictionary *defaultPrefs = [NSDictionary dictionaryWithContentsOfURL:defaultPrefsFile];
     [[NSUserDefaults standardUserDefaults] registerDefaults:defaultPrefs];
-
-    
-    
-    [self updateLevelButtons];
     
     self.display = [[SpriteDisplay alloc] init];
     
     [self getSettings];
- 
+    
     self.display.boardLayer  = scene.boardLayer;
     
-    self.display.scoreLabel = self.scoreLabel;
-    self.display.diamondsLabel = self.diamondsLabel;
-    self.display.maxMovesLabel = self.maxMovesLabel;
-    self.display.monsterLabel = self.monsterLabel;
-    self.display.nameLabel = self.nameLabel;
-    self.display.view = self.view;
+
+    
+    self.display.view = self.spriteView;
     self.display.delegate = self;
     
+    [self.view sendSubviewToBack:self.spriteView];
     
-    memset(&_game, sizeof(_game), 0);
-    
-    
-    UITapGestureRecognizer *recognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapped:)];
+    UITapGestureRecognizer *recognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(actionTapped:)];
     [[self view] addGestureRecognizer:recognizer];
+        
+    memset(&_game, sizeof(_game), 0);
     
     [self scheduleNextAction:NextActionInitScreen move:0];
     
     _total_score = [self calculateTotalScore];
     
-   
+    
+    // iCloud
+    //  Observer to catch changes from iCloud
+    NSUbiquitousKeyValueStore *store = [NSUbiquitousKeyValueStore defaultStore];
+    
+    if (store!=nil)
+    {
+        NSNotificationCenter *center = [NSNotificationCenter defaultCenter];
+        self.observerObj =   [center addObserverForName:NSUbiquitousKeyValueStoreDidChangeExternallyNotification
+                                                 object:store
+                                                  queue:[NSOperationQueue mainQueue] usingBlock:^(NSNotification *notification){
+                                                      DEBUG_LOG(@"NSUbiquitousKeyValueStoreDidChangeExternallyNotification");
+                                                      NSDictionary *userInfo = [notification userInfo];
+                                                      DEBUG_LOGO(userInfo);
+                                                      
+                                                      NSNumber *reason = [userInfo objectForKey:NSUbiquitousKeyValueStoreChangeReasonKey];
+                                                      
+                                                      switch (reason.intValue)
+                                                      {
+                                                          case NSUbiquitousKeyValueStoreAccountChange:
+                                                          case NSUbiquitousKeyValueStoreServerChange:
+                                                              [self mergeCloud];
+                                                              [self updateButtons];
+                                                              break;
+                                                          case NSUbiquitousKeyValueStoreInitialSyncChange:
+                                                              break;
+                                                          case NSUbiquitousKeyValueStoreQuotaViolationChange:
+                                                              break;
+                                                      }
+                                                  }];
+        
+        
+        [store setString:@"v" forKey:@"testKey"];
+        [store synchronize];
+        
+        [self mergeCloud];
+        
+        [self updateButtons];
+        
+        
+    }
+    
+    
+    [self.view becomeFirstResponder];
+    
+    
+    self.keyCommands = @[
+                         [UIKeyCommand keyCommandWithInput:UIKeyInputUpArrow modifierFlags:0 action:@selector(keyboardUp:) discoverabilityTitle:@"Up"],
+                         [UIKeyCommand keyCommandWithInput:[NSString stringWithChar:kMoveKeyUp] modifierFlags:0 action:@selector(keyboardUp:) discoverabilityTitle:@"Up"],
+                         [UIKeyCommand keyCommandWithInput:UIKeyInputDownArrow modifierFlags:0 action:@selector(keyboardDown:) discoverabilityTitle:@"Down"],
+                         [UIKeyCommand keyCommandWithInput:[NSString stringWithChar:kMoveKeyDown] modifierFlags:0 action:@selector(keyboardDown:)  discoverabilityTitle:@"Down"],
+                         [UIKeyCommand keyCommandWithInput:UIKeyInputLeftArrow modifierFlags:0 action:@selector(keyboardLeft:) discoverabilityTitle:@"Left"],
+                         [UIKeyCommand keyCommandWithInput:[NSString stringWithChar:kMoveKeyLeft] modifierFlags:0 action:@selector(keyboardLeft:) discoverabilityTitle:@"Left"],
+                         [UIKeyCommand keyCommandWithInput:UIKeyInputRightArrow modifierFlags:0 action:@selector(keyboardRight:) discoverabilityTitle:@"Right"],
+                         [UIKeyCommand keyCommandWithInput:[NSString stringWithChar:kMoveKeyRight] modifierFlags:0 action:@selector(keyboardRight:) discoverabilityTitle:@"Right"],
+                         [UIKeyCommand keyCommandWithInput:[NSString stringWithChar:kMoveKeySkip] modifierFlags:0 action:@selector(keyboardSkip:) discoverabilityTitle:@"Skip"],
+                         [UIKeyCommand keyCommandWithInput:UIKeyInputEscape modifierFlags:0 action:@selector(keyboardAction:) discoverabilityTitle:@"Start over"],
+                         [UIKeyCommand keyCommandWithInput:kKeyReturn modifierFlags:0 action:@selector(keyboardAction:)],
+                         [UIKeyCommand keyCommandWithInput:kKeyR modifierFlags:0 action:@selector(keyboardAction:)],
+                         // [UIKeyCommand keyCommandWithInput:kKeyN modifierFlags:0 action:@selector(keyboardAction:) discoverabilityTitle:@"Screens"],
+                         [UIKeyCommand keyCommandWithInput:kKeyP modifierFlags:0 action:@selector(keyboardAction:) discoverabilityTitle:@"Start playback"],
+                         [UIKeyCommand keyCommandWithInput:kKeyX modifierFlags:0 action:@selector(keyboardAction:) discoverabilityTitle:@"Playback speed"],
+                         [UIKeyCommand keyCommandWithInput:kKeyS modifierFlags:0 action:@selector(keyboardAction:) discoverabilityTitle:@"Save checkpoint"],
+                         [UIKeyCommand keyCommandWithInput:kKeyD modifierFlags:0 action:@selector(keyboardAction:) discoverabilityTitle:@"Stop playback"],
+                         [UIKeyCommand keyCommandWithInput:kKeyQ modifierFlags:0 action:@selector(keyboardAction:) discoverabilityTitle:@"Previous Screen"],
+                         [UIKeyCommand keyCommandWithInput:kKeyW modifierFlags:0 action:@selector(keyboardAction:) discoverabilityTitle:@"Next Screen"]
+                         // [UIKeyCommand keyCommandWithInput:kKeyM modifierFlags:0 action:@selector(keyboardAction:) discoverabilityTitle:@"Menu"]
+                         ];
 }
 
-- (void)viewDidAppear:(BOOL)animated
+
+- (void)viewDidLayoutSubviews
 {
-    [super viewDidAppear:animated];
-    
-    if ([self showHelpOnce])
+    if (self.display.diamondsLabel==nil)
     {
-        [self showHelp:nil];
+        [self displaySetLabels];
     }
+}
+
+- (void)controlClusterTouchedUp:(id)sender event:(UIEvent *)event
+{    
+    if (!_busyTouched)
+    {
+        [self actionButtonUp];
+    }
+    if ([sender isKindOfClass:[DirectionClusterControl class]])
+    {
+        [((DirectionClusterControl*)sender).upperView fadeOut];
+    }
+}
+
+- (void)controlClusterTouched:(DirectionClusterControl *)sender event:(UIEvent *)event
+{
+    char move = [sender getDirectionTouchedforEvent:event];
+    
+    if (!_busy ||
+        (move == kMoveKeyStep && self.playbackState == PlaybackStepping
+                              && self.getDisplayPlaybackSpeed != kSegStep))
+    {
+        char move = [sender getDirectionTouchedforEvent:event];
+        [self actionDirection:move];
+        [sender.upperView touched:move];
+        _busyTouched = NO;
+    }
+    else
+    {
+        _busyTouched = YES;
+    }
+}
+
+- (void)mergeCloud
+{
+    NSUbiquitousKeyValueStore *store = [NSUbiquitousKeyValueStore defaultStore];
+    
+    DEBUG_LOGO([store.dictionaryRepresentation allKeys]);
+    
+#if 0
+    NSArray *keys = [store.dictionaryRepresentation allKeys];
+    
+    for (NSString *key in keys)
+    {
+        [store removeObjectForKey:key];
+    }
+#endif
+    
+    
+    
+    if ([self mergeAchievements:store])
+    {
+        DEBUG_LOG(@"iCloud: Updated store with achievements\n");
+    }
+    
+    if ([self mergeMoves:store])
+    {
+        DEBUG_LOG(@"iCloud: Updated store with moves\n");
+    }
+}
+
+- (bool)mergeAchievements:(NSUbiquitousKeyValueStore *)store
+{
+    bool cloudChanged = NO;
+    bool localChanged = NO;
+    
+    for (int i=0; i<= kFinalScreen; i++)
+    {
+        if ([self mergeAchievement:i remote:store localChanged:&localChanged])
+        {
+            cloudChanged = YES;
+        }
+    }
+    
+    if (localChanged)
+    {
+        [self saveAchievements];
+    }
+    
+    return cloudChanged;
+}
+
+- (bool)mergeAchievement:(int)i remote:(NSUbiquitousKeyValueStore *)store localChanged:(bool*)localChanged
+{
+    if (store==nil)
+    {
+        return NO;
+    }
+    
+    bool cloudChanged = NO;
+    NSString *localKey      = [NSString stringWithFormat:@"%d", i];
+    NSString *cloudScoreKey = [NSString stringWithFormat:@"Score%d", i];
+    NSString *cloudDateKey  = [NSString stringWithFormat:@"ScoreDate%d", i];
+    
+    NSDictionary *local  = self.achievements[localKey];
+    NSNumber *cloudScore = [store objectForKey:cloudScoreKey];
+    NSDate *cloudDate    = [store objectForKey:cloudDateKey];
+    NSNumber *localScore = local ? local[kAchievementScore] : nil;
+    NSNumber *localDate  = local ? local[kDate] : nil;
+    
+    
+    bool copyToRemote = NO;
+    bool copyToLocal  = NO;
+    
+    if (local==nil && cloudScore!=nil)
+    {
+        copyToLocal = YES;
+    }
+    else if (local!=nil && cloudScore==nil)
+    {
+        copyToRemote = YES;
+    }
+    else
+    {
+        if (localScore && cloudScore && localScore.intValue < cloudScore.intValue)
+        {
+            copyToLocal = YES;
+        }
+        
+        if (localScore && cloudScore && localScore.intValue > cloudScore.intValue)
+        {
+            copyToRemote = YES;
+        }
+        
+    }
+    
+    if (copyToRemote && localDate)
+    {
+        DEBUG_LOG(@"iCloud: Achievement %d uploaded to cloud\n", i);
+        [store setObject:localScore   forKey:cloudScoreKey];
+        [store setObject:localDate    forKey:cloudDateKey];
+        
+        cloudChanged = YES;
+        
+    }
+    
+    if (copyToLocal)
+    {
+        DEBUG_LOG(@"iCloud: Achievement %d downloaded from cloud\n", i);
+        self.achievements[localKey] = @{ kAchievementScore: cloudScore,
+                                         kDate: cloudDate };
+        
+        if (localChanged)
+        {
+            *localChanged = YES;
+        }
+    }
+    return cloudChanged;
+    
+}
+
+- (bool)mergeMoves:(NSUbiquitousKeyValueStore *)store
+{
+    bool cloudChanged = NO;
+    
+    for (int i=0; i<= kFinalScreen; i++)
+    {
+        if ([self mergeMove:i remote:store])
+        {
+            cloudChanged = YES;
+        }
+    }
+    return cloudChanged;
+}
+
+- (bool)mergeMove:(int)i remote:(NSUbiquitousKeyValueStore *)store
+{
+    if (store==nil)
+    {
+        return NO;
+    }
+    
+    bool cloudChanged = NO;
+    NSString *localMoves = [self getSavedMoves:i];
+    NSDate *localDate = nil;
+    NSError *error = nil;
+    NSURL *fileUrl = [NSURL fileURLWithPath:[self getMovesFileName:i]];
+    NSString *remoteMoves = nil;
+    NSDate *remoteDate  = nil;
+    
+    
+    if (localMoves!=nil)
+    {
+        [fileUrl getResourceValue:&localDate forKey:NSURLContentModificationDateKey error:&error];
+        if (error)
+        {
+            localDate = [NSDate dateWithTimeIntervalSince1970:0];
+        }
+    }
+    
+    NSString *cloudMovesKey = [NSString stringWithFormat:@"Moves%d", i];
+    NSString *cloudDateKey  = [NSString stringWithFormat:@"MovesDate%d", i];
+    
+    
+    bool copyToRemote = NO;
+    bool copyToLocal  = NO;
+    
+    
+    remoteMoves = [store objectForKey:cloudMovesKey];
+    remoteDate  = [store objectForKey:cloudDateKey];
+    
+    
+    if (remoteMoves==nil && localMoves!=nil)
+    {
+        copyToRemote = YES;
+    }
+    else if (remoteMoves!=nil && localMoves==nil)
+    {
+        copyToLocal = YES;
+    }
+    else  // both exist.  Gulp
+    {
+        if (remoteMoves == nil || remoteDate == nil)
+        {
+            if (localMoves !=nil && localDate!=nil)
+            {
+                copyToRemote = YES;
+            }
+        }
+        else
+        {
+            NSTimeInterval diff = [remoteDate timeIntervalSinceDate:localDate];
+            
+            if (diff < 0)
+            {
+                copyToRemote = YES;
+            }
+            if (diff > 0)
+            {
+                copyToLocal = YES;
+            }
+        }
+    }
+    
+    if (copyToRemote)
+    {
+        if (localMoves && localDate)
+        {
+            DEBUG_LOG(@"iCloud: Moves %d uploaded to cloud\n", i);
+            
+            [store setObject:localMoves forKey:cloudMovesKey];
+            [store setObject:localDate  forKey:cloudDateKey];
+            cloudChanged = YES;
+        }
+    }
+    
+    if (copyToLocal)
+    {
+        if (remoteMoves && remoteDate)
+        {
+            DEBUG_LOG(@"iCloud: Moves %d downloaded from cloud\n", i);
+            
+            [self writeSavedMoves:remoteMoves screen:i];
+            [fileUrl setResourceValue:remoteDate forKey:NSURLContentModificationDateKey error:&error];
+        }
+    }
+    
+    
+    return cloudChanged;
 }
 
 - (void)scheduleNextAction:(NextAction)action move:(char)move
@@ -1117,7 +1407,7 @@
             switch (self.nextAction)
             {
                 case NextActionInitScreen:
-                    [self playbackRecording];
+                    [self setStateRecording];
                     [self initScreen];
                     [self saveLevel];
                     self.nextAction = NextActionDoNothing;
@@ -1129,6 +1419,10 @@
                     self.nextMove = 0;
                     break;
                 case NextActionDoNothing:
+                    break;
+                case NextActionPlayback:
+                    self.nextAction = NextActionDoNothing;
+                    [self actionPlayback];
                     break;
             }
         }
@@ -1166,10 +1460,16 @@
     }
 }
 
+- (void)schedulePlayback
+{
+    [self scheduleNextAction:NextActionPlayback move:0];
+}
 
 
-- (IBAction)saveCheckpoint:(id)sender {
-    if (self.previousKeyStrokes)
+
+- (void)actionSaveCheckpoint
+{
+    if (self.savedKeyStrokes)
     {
         UIAlertController* alert = [UIAlertController alertControllerWithTitle:@"Checkpoint"
                                                                        message:@"Replace the checkpoint for this screen?"
@@ -1177,51 +1477,59 @@
         
         [alert addAction:[self actionWithTitle:@"OK" style:UIAlertActionStyleDestructive
                                     buttonName:kButtonA
+                                       keyName:kKeyReturn
                                        handler:^(UIAlertAction * action) {
                                            [self writeSavedMoves];
-                                           _unsavedMoves = NO;
-                                           [self updateLevelButtons];
+                                           self->_unsavedMoves = NO;
+                                           [self updateButtons];
                                        }]];
         
         [alert addAction:[self actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel
                                     buttonName:kButtonX
-                                       handler:^(UIAlertAction * action) {
-                                           [[SKPaymentQueue defaultQueue] addTransactionObserver:self];
-                                           [[SKPaymentQueue defaultQueue] restoreCompletedTransactions];
-                                       }]];
+                                       keyName:UIKeyInputEscape
+                                       handler:nil]];
         
         [self presentViewController:alert animated:YES completion:nil];
     }
     else
     {
         [self writeSavedMoves];
-        [self updateLevelButtons];
-
+        [self updateButtons];
+        
     }
 }
 
-- (void)startPlayback
+- (void)displayPlaybackSpeed:(int)playbackSpeed
+{
+    
+}
+
+- (void)startPlaybackWithKeyStrokes:(NSString *)keyStrokes
 {
     self.playbackState = PlaybackStepping;
-    self.playbackSpeedSeg.selectedSegmentIndex = _startPlaybackSpeed;
+    self.playbackKeyStrokes = keyStrokes;
+    
+    [self displayPlaybackSpeed:_startPlaybackSpeed];
     [self initScreen];
-    [self playbackSpeedChanged:nil];
-    self.playbackMoves.text = [NSString stringWithFormat:@"Playback moves: %d",(int)(self.previousKeyStrokes.length - self.playbackPosition)];
+    [self actionPlaybackSpeedChanged];
+    
+    [self displayPlaybackMoves:(int)(self.playbackKeyStrokes.length - self.playbackPosition)];
     [self.display sunglassesPlayer];
+    _normalFlashing = NO;
 }
 
 - (void)stopPlayback:(dispatch_block_t)block
 {
     if (self.playbackState != PlaybackRecording)
     {
-        [self controlButtonUp:nil];
+        [self actionButtonUp];
         self.playbackState = PlaybackRecording;
         __weak typeof(self) weakSelf = self;
         [self.display cancelSequenceWithCompletion:^{
-            weakSelf.keyStrokes = [[weakSelf.previousKeyStrokes substringToIndex:weakSelf.playbackPosition] mutableCopy];
-            [weakSelf playbackRecording];
-            [weakSelf updateLevelButtons];
-        
+            weakSelf.keyStrokes = [[weakSelf.playbackKeyStrokes substringToIndex:weakSelf.playbackPosition] mutableCopy];
+            [weakSelf setStateRecording];
+            [weakSelf updateButtons];
+            
             if (block)
             {
                 block();
@@ -1231,24 +1539,27 @@
     {
         block();
     }
-
+    
 }
 
-- (IBAction)playbackPressed:(id)sender {
+- (void)actionPlayback
+{
     switch (self.playbackState)
     {
+    
         case PlaybackStepping:
             // Copy where we are now into the recording buffer
             [self stopPlayback:nil];
             break;
+        case PlaybackDead:
         case PlaybackOverrun:
         case PlaybackRecording:
-            if (self.previousKeyStrokes!=nil)
+            if (self.savedKeyStrokes!=nil)
             {
                 if (!_unsavedMoves && self.playbackState!=PlaybackDone)
                 {
                     
-                    [self startPlayback];
+                    [self startPlaybackWithKeyStrokes:self.savedKeyStrokes];
                     
                 }
                 else
@@ -1259,14 +1570,16 @@
                     
                     [alert addAction:[self actionWithTitle:@"OK" style:UIAlertActionStyleDestructive
                                                 buttonName:kButtonA
+                                                   keyName:kKeyReturn
                                                    handler:^(UIAlertAction * action) {
                                                        [self.display cancelSequenceWithCompletion:^{
-                                                           [self startPlayback];
+                                                           [self startPlaybackWithKeyStrokes:self.savedKeyStrokes];
                                                        }];
                                                    }]];
                     
                     [alert addAction:[self actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel
                                                 buttonName:kButtonX
+                                                   keyName:UIKeyInputEscape
                                                    handler:nil]];
                     
                     [self presentViewController:alert animated:YES completion:nil];
@@ -1277,7 +1590,7 @@
         case PlaybackDone:
             break;
     }
-
+    
 }
 
 - (void)fire
@@ -1294,6 +1607,7 @@
 
 - (void)rapidFire:(id)arg
 {
+    DEBUG_FUNC();
     if (self.rapidFireControllerButton)
     {
         if (self.controllerConnected && self.rapidFireControllerButton.pressed && self.rapidFireDirection)
@@ -1302,7 +1616,7 @@
         }
         else
         {
-            [self controlButtonUp:nil];
+            [self actionButtonUp];
         }
     }
     else
@@ -1326,44 +1640,100 @@
     self.rapidFireTimer = [NSTimer scheduledTimerWithTimeInterval:self.rapidFireDuration * 1.5 target:self selector:@selector(rapidFire:) userInfo:nil repeats:NO];
 }
 
-- (IBAction)controlButtonUp:(id)sender {
-    
+
+
+- (void)actionButtonUp
+{
+    DEBUG_FUNC();
     self.rapidFireControllerButton = nil;
     [self.rapidFireTimer invalidate];
     self.rapidFireTimer = nil;
     self.rapidFireDirection = 0;
 }
 
-- (IBAction)up:(id)sender {
-    [self scheduleMove:kMoveKeyUp];
-    [self scheduleRapidFire:nil direction:kMoveKeyUp];
+- (void)actionDirection:(char)direction
+{
+    [self scheduleMove:direction];
+    [self scheduleRapidFire:nil direction:direction];
 }
 
-- (IBAction)left:(id)sender {
-    [self scheduleMove:kMoveKeyLeft];
-    [self scheduleRapidFire:nil direction:kMoveKeyLeft];
+- (void)keyboardAction:(UIKeyCommand*)key
+{
+    if (self.alertActionMap[key.input]!=nil)
+    {
+        self.alertActionMap[key.input](nil);
+    }
+    else if (self.buttonActionMap[key.input]!=nil)
+    {
+        self.buttonActionMap[key.input]();
+    }
 }
 
-- (IBAction)right:(id)sender {
-    [self scheduleMove:kMoveKeyRight];
-    [self scheduleRapidFire:nil direction:kMoveKeyRight];
+- (void)keyboardUp:(id)arg
+{
+    if (self.presentedViewController==nil)
+    {
+        [self scheduleMove:kMoveKeyUp];
+        [self actionButtonUp];
+    }
 }
 
-- (IBAction)down:(id)sender {
-    [self scheduleMove:kMoveKeyDown];
-    [self scheduleRapidFire:nil direction:kMoveKeyDown];
+- (void)keyboardDown:(id)arg
+{
+    if (self.presentedViewController==nil)
+    {
+        [self scheduleMove:kMoveKeyDown];
+        [self actionButtonUp];
+    }
 }
 
-- (IBAction)stay:(id)sender {
-    [self scheduleMove:kMoveKeySkip];
-    [self scheduleRapidFire:nil direction:kMoveKeySkip];
+- (void)keyboardLeft:(id)arg
+{
+    if (self.presentedViewController==nil)
+    {
+        [self scheduleMove:kMoveKeyLeft];
+        [self actionButtonUp];
+    }
 }
 
-- (IBAction)startOver:(id)sender {
-    
-    
-    
-    if (_unsavedMoves && self.playbackState!=PlaybackDone)
+- (void)keyboardRight:(id)arg
+{
+    if (self.presentedViewController==nil)
+    {
+        [self scheduleMove:kMoveKeyRight];
+        [self actionButtonUp];
+    }
+}
+
+- (void)keyboardSkip:(UIKeyCommand*)arg
+{
+    if (self.presentedViewController==nil)
+    {
+        if (self.playbackState == PlaybackStepping && self.getDisplayPlaybackSpeed != kSegStep)
+        {
+            [self displayPlaybackSpeed:kSegStep];
+            [self actionPlaybackSpeedChanged];
+        }
+        
+        [self scheduleMove:kMoveKeySkip];
+        [self actionButtonUp];
+    }
+    else
+    {
+        [self keyboardAction:arg];
+    }
+}
+
+
+
+- (void)actionStartOver
+{
+    if (self.playbackState == PlaybackDead)
+    {
+        [self setStateRecording];
+        [self initScreen];
+    }
+    else if (_unsavedMoves && self.playbackState!=PlaybackDone)
     {
         UIAlertController* alert = [UIAlertController alertControllerWithTitle:@"Start this screen over"
                                                                        message:@"You will lose any unsaved progress for this screen."
@@ -1371,6 +1741,7 @@
         
         [alert addAction:[self actionWithTitle:@"OK" style:UIAlertActionStyleDestructive
                                     buttonName:kButtonA
+                                       keyName:kKeyReturn
                                        handler:^(UIAlertAction * action) {
                                            [self stopPlayback:^{
                                                [self makeMove:kMoveQuit];
@@ -1379,6 +1750,7 @@
         
         [alert addAction:[self actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel
                                     buttonName:kButtonX
+                                       keyName:UIKeyInputEscape
                                        handler:nil]];
         
         [self presentViewController:alert animated:YES completion:nil];
@@ -1386,32 +1758,34 @@
     }
     else if (self.playbackState==PlaybackDone)
     {
-        if (self.previousKeyStrokes!=nil)
+        if (self.savedKeyStrokes!=nil)
         {
-            [self playbackRecording];
+            [self setStateRecording];
             [self initScreen];
         }
     }
     else
     {
-         [self scheduleMove:kMoveQuit];
+        [self scheduleMove:kMoveQuit];
     }
 }
 
-- (IBAction)next:(id)sender {
+- (void)actionNext
+{
     if (_num < self.highest)
     {
         [self changeToScreen:_num+1 review:NO];
     }
 }
 
-- (void)playbackRecording
+- (void)setStateRecording
 {
     self.playbackState = PlaybackRecording;
     [self.display normalPlayer];
 }
 
-- (IBAction)previous:(id)sender {
+- (void)actionPrevious
+{
     
     if (_num >0)
     {
@@ -1441,6 +1815,11 @@
     
 }
 
+- (int)getDisplayPlaybackSpeed
+{
+    return 0;  // self.playbackSpeedSeg.selectedSegmentIndex
+}
+
 
 - (void)clearController
 {
@@ -1457,7 +1836,7 @@
         [self.controller.extendedGamepad.buttonB setValueChangedHandler:nil];
         [self.controller.extendedGamepad.buttonX setValueChangedHandler:nil];
         [self.controller.extendedGamepad.buttonY setValueChangedHandler:nil];
-
+        
         self.controller = nil;
     }
 }
@@ -1472,7 +1851,7 @@
     {
         
         self.controller = controllers[0];
-
+        
         if (self.controller.extendedGamepad) {
             
             self.controllerConnected = YES;
@@ -1589,6 +1968,36 @@
                 }
             }];
             
+            [self.controller.extendedGamepad.rightTrigger setValueChangedHandler:^(GCControllerButtonInput *button, float value, BOOL pressed) {
+                BUTTON_LOG(kButtonR2);
+                if (pressed && [depressedDate timeIntervalSinceNow] < BUTTON_BOUNCE)
+                {
+                    if (weakSelf.presentedViewController==nil)
+                    {
+                        if (weakSelf.buttonActionMap[kButtonR2])
+                        {
+                            (weakSelf.buttonActionMap[kButtonR2])();
+                        }
+                    }
+                    depressedDate = [NSDate date];
+                }
+            }];
+            
+            [self.controller.extendedGamepad.leftTrigger setValueChangedHandler:^(GCControllerButtonInput *button, float value, BOOL pressed) {
+                BUTTON_LOG(kButtonL2);
+                if (pressed && [depressedDate timeIntervalSinceNow] < BUTTON_BOUNCE)
+                {
+                    if (weakSelf.presentedViewController==nil)
+                    {
+                        if (weakSelf.buttonActionMap[kButtonL2])
+                        {
+                            (weakSelf.buttonActionMap[kButtonL2])();
+                        }
+                    }
+                    depressedDate = [NSDate date];
+                }
+            }];
+            
             [self.controller.extendedGamepad.buttonA setValueChangedHandler:^(GCControllerButtonInput *button, float value, BOOL pressed) {
                 BUTTON_LOG(kButtonA);
                 if (weakSelf.presentedViewController)
@@ -1602,14 +2011,14 @@
                         depressedDate = [NSDate date];
                     }
                 }
-                else if (self.playbackState != PlaybackStepping || self.playbackSpeedSeg.selectedSegmentIndex == kSegStep)
+                else if (self.playbackState != PlaybackStepping || self.getDisplayPlaybackSpeed == kSegStep)
                 {
                     depressedDate = [weakSelf keyStroke:kMoveKeySkip last:depressedDate value:value pressed:pressed button:button];
                 }
-                else if (self.playbackState == PlaybackStepping && self.playbackSpeedSeg.selectedSegmentIndex != kSegStep)
+                else if (self.playbackState == PlaybackStepping && self.getDisplayPlaybackSpeed != kSegStep)
                 {
-                    self.playbackSpeedSeg.selectedSegmentIndex = kSegStep;
-                    [self playbackSpeedChanged:nil];
+                    [self displayPlaybackSpeed:kSegStep];
+                    [self actionPlaybackSpeedChanged];
                 }
             }];
             
@@ -1695,17 +2104,15 @@
 - (void)controllerDiscovered:(NSNotification *)connectedNotification {
     
     [self setupControler];
-    [self updateLevelButtons];
+    [self updateButtons];
 }
 
 
 - (void)controllerGone:(NSNotification *)connectedNotification {
     [self clearController];
-    self.controllerLabel.text = @"";
-    self.controllerLabel.hidden = YES;
     self.controllerConnected = NO;
     [self.buttonActionMap removeAllObjects];
-    [self updateLevelButtons];
+    [self updateButtons];
 }
 
 - (void)toggleHardwareController:(BOOL)useHardware {
@@ -1722,93 +2129,99 @@
                                                            object:nil];
                 
                 [[NSNotificationCenter defaultCenter] addObserver:self
-                    selector:@selector(controllerGone:)
-                    name:GCControllerDidDisconnectNotification
-                    object:nil];
+                                                         selector:@selector(controllerGone:)
+                                                             name:GCControllerDidDisconnectNotification
+                                                           object:nil];
             }
         }
     }
 }
 
-- (IBAction)swipeRight:(id)sender {
+- (void)actionSwipeRight
+{
     [self scheduleMove:kMoveKeyRight];
 }
 
-- (IBAction)swipeLeft:(id)sender {
+- (void)actionSwipeLeft
+{
     [self scheduleMove:kMoveKeyLeft];
 }
 
-- (IBAction)swipeUp:(id)sender {
-     [self scheduleMove:kMoveKeyUp];
+- (void)actionSwipeUp
+{
+    [self scheduleMove:kMoveKeyUp];
 }
 
-- (IBAction)swipeDown:(id)sender {
+- (void)actionSwipeDown
+{
     [self scheduleMove:kMoveKeyDown];
 }
 
-- (IBAction)tapped:(UITapGestureRecognizer *)sender
+
+
+- (void)actionTapped:(UITapGestureRecognizer *)sender
 
 {
     if (sender.state == UIGestureRecognizerStateEnded)
     {
-        SKView *view = (SKView*)self.view;
-        CGPoint scenePoint = [view convertPoint:[sender locationInView:self.view] toScene:view.scene];
+        /*
+        CGPoint screenOpposite = CGPointMake(self.display.boardLayer.position.x + kTileWidth*kBoardWidth, self.display.boardLayer.position.y + kTileHeight*kBoardHeight);
+        
+        CGPoint origin    = [self.spriteView convertPoint:self.display.boardLayer.position fromScene:self.spriteView.scene];
+        CGPoint opposite  = [self.spriteView convertPoint:screenOpposite fromScene:self.spriteView.scene];
+        
+        origin = CGPointOffsetted(origin, self.spriteView.frame.origin);
+        opposite = CGPointOffsetted(opposite, self.spriteView.frame.origin);
+        */
+        
+        CGPoint scenePoint = [self.spriteView convertPoint:[sender locationInView:self.self.spriteView] toScene:self.spriteView.scene];
+        
         CGRect  gameRect = CGRectMake(self.display.boardLayer.position.x, self.display.boardLayer.position.y, kTileWidth*kBoardWidth, kTileHeight*kBoardHeight);
+        
+        // Origin is bottom left
+        
         
         if (CGRectContainsPoint(gameRect, scenePoint))
         {
             [self scheduleMove:kMoveKeySkip];
         }
-        
-        DEBUG_LOG(@"%f %f", scenePoint.x, scenePoint.y);
     }
 }
 
-- (IBAction)settingsTouched:(id)sender {
-    
-    /*
-     [[UIApplication sharedApplication] openURL:[NSURL URLWithString:UIApplicationOpenSettingsURLString]
-     options:[NSDictionary dictionary]
-     completionHandler:nil];
-     
-     */
-    
-    
-    // grab the view controller we want to show
-    
-    UINavigationController *controller = [[UINavigationController alloc] init];
-    
-    UIViewController *settings = [[SettingsTableViewController alloc] init];
-    
-    [controller pushViewController:settings animated:NO];
-    controller.title = @"Settings";
+- (void)showBusy:(bool)busy
+{
 
-    
-    // present the controller
-    // on iPad, this will be a Popover
-    // on iPhone, this will be an action sheet
-    controller.modalPresentationStyle = UIModalPresentationPopover;
-    [self presentViewController:controller animated:YES completion:nil];
-    
-    // configure the Popover presentation controller
-    UIPopoverPresentationController *popController = [controller popoverPresentationController];
-    popController.permittedArrowDirections = UIPopoverArrowDirectionAny;
-    popController.sourceView = self.settingsButton;
-    
-    
 }
 
 - (void)animationsStarted
 {
     _busy = YES;
-    self.animatingLabel.text = @"🤔";
+    
+    if (self.busyTimer!=nil)
+    {
+        [self.busyTimer invalidate];
+        self.busyTimer = nil;;
+    }
+    else
+    {
+        [self showBusy:YES];
+    }
 }
 
 - (void)animationsDone
 {
     _busy = NO;
-    self.animatingLabel.text = @"";
     
+    if (_reinitForRetro)
+    {
+        _reinitForRetro = NO;
+        [self.display ad_init_completed];
+    }
+    
+    self.busyTimer = [NSTimer scheduledTimerWithTimeInterval:0.05 repeats:NO block:^(NSTimer *timer){
+        self.busyTimer = nil;
+        [self showBusy:NO];
+    }];
 }
 
 -(void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender{
@@ -1832,7 +2245,12 @@
     return kMaxScreen;
 }
 
-- (IBAction)showHighScores:(id)sender
+- (long)totalScore
+{
+    return _total_score;
+}
+
+- (void)actionShowHighScores
 {
     if (_gameCenter)
     {
@@ -1840,7 +2258,7 @@
     }
 }
 
-- (IBAction)showAchievements:(id)sender
+- (void)actionShowAchievements
 {
     if (_gameCenter)
     {
@@ -1848,32 +2266,17 @@
     }
 }
 
-- (IBAction)showHelp:(id)sender
-{
-    // grab the view controller we want to show
-    UIViewController *controller = [[HelpScreen alloc] init];
-    
-    // present the controller
-    // on iPad, this will be a Popover
-    // on iPhone, this will be an action sheet
-    controller.modalPresentationStyle = UIModalPresentationPopover;
-    [self presentViewController:controller animated:YES completion:nil];
-    
-    // configure the Popover presentation controller
-    UIPopoverPresentationController *popController = [controller popoverPresentationController];
-    popController.permittedArrowDirections = UIPopoverArrowDirectionAny;
-    popController.sourceView = self.helpButton;
-}
-- (IBAction)playbackSpeedChanged:(id)sender
+
+- (void)actionPlaybackSpeedChanged
 {
     if (self.playbackState == PlaybackStepping)
     {
         // NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
         
-        switch (self.playbackSpeedSeg.selectedSegmentIndex)
+        switch (self.getDisplayPlaybackSpeed)
         {
             case kSegStep:
-                [self controlButtonUp:nil];
+                [self actionButtonUp];
                 self.display.animationDuration = kAnimationDurationV;
                 self.rapidFireDuration = kRapidFireDurationV;
                 self.display.playerDuration = self.rapidFireDuration;
@@ -1896,10 +2299,10 @@
                 self.rapidFireDuration = 0;
                 [self scheduleRapidFire:nil direction:kMoveKeySkip];
                 break;
-            
+                
                 
         }
-        [self updateLevelButtons];
+        [self updateButtons];
     }
 }
 
@@ -1912,14 +2315,15 @@
     [[NSUserDefaults standardUserDefaults] synchronize];
 }
 
-- (IBAction)donate:(id)sender
+- (void)actionDonate
 {
     if([SKPaymentQueue canMakePayments]){
         SKProductsRequest *productsRequest = [[SKProductsRequest alloc] initWithProductIdentifiers:[NSSet setWithObject:kDonateProductIdentifier]];
         productsRequest.delegate = self;
         [productsRequest start];
         // self.donateButton.titleLabel.text=@"Working...";
-        self.donateButton.enabled = NO;
+        // self.donateButton.enabled = NO;
+        [self displayDonated:_donated capable:[SKPaymentQueue canMakePayments] processing:YES];
     }
 }
 
@@ -1935,17 +2339,18 @@
         [numberFormatter setNumberStyle:NSNumberFormatterCurrencyStyle];
         [numberFormatter setLocale:validProduct.priceLocale];
         
-//      NSLocale* storeLocale = validProduct.priceLocale;
-//      NSString *storeCountry = (NSString*)CFLocaleGetValue((CFLocaleRef)storeLocale, kCFLocaleCountryCode);
+        //      NSLocale* storeLocale = validProduct.priceLocale;
+        //      NSString *storeCountry = (NSString*)CFLocaleGetValue((CFLocaleRef)storeLocale, kCFLocaleCountryCode);
         NSString *price = [numberFormatter stringFromNumber:validProduct.price];
         
         UIAlertController* alert = [UIAlertController alertControllerWithTitle:@"Donate"
                                                                        message:[NSString stringWithFormat:@"If you like this app, would you donate %@ to the developer? The features of the app will rename the same, but the 'Donate!' button will disappear.",
-                                                                                                            price]
+                                                                                price]
                                                                 preferredStyle:UIAlertControllerStyleAlert];
         
         [alert addAction:[self actionWithTitle:@"OK" style:UIAlertActionStyleDestructive
                                     buttonName:kButtonA
+                                       keyName:kKeyReturn
                                        handler:^(UIAlertAction * action) {
                                            
                                            [self purchase:validProduct];
@@ -1954,11 +2359,15 @@
         
         [alert addAction:[self actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel
                                     buttonName:kButtonX
-                                       handler:nil]];
+                                       keyName:UIKeyInputEscape
+                                       handler:^(UIAlertAction * action) {
+                                           [self displayDonated:self->_donated capable:[SKPaymentQueue canMakePayments] processing:NO];
+                                       }]];
         
         
         [alert addAction:[self actionWithTitle:@"Restore Purchases" style:UIAlertActionStyleDefault
                                     buttonName:kButtonY
+                                       keyName:kKeyR
                                        handler:^(UIAlertAction * action) {
                                            [[SKPaymentQueue defaultQueue] addTransactionObserver:self];
                                            [[SKPaymentQueue defaultQueue] restoreCompletedTransactions];
@@ -1969,13 +2378,13 @@
     else if(!validProduct){
         // NSLog(@"No products available");
         //this is called if your product id is not valid, this shouldn't be called unless that happens.
-        
+        [self displayDonated:_donated capable:[SKPaymentQueue canMakePayments] processing:NO];
         DEBUG_LOG(@"Bad ids %@", response.invalidProductIdentifiers.debugDescription);
     }
     
     
     // self.donateButton.titleLabel.text=@"Donate!";
-    self.donateButton.enabled = YES;
+    // self.donateButton.enabled = YES;
 }
 
 - (void)purchase:(SKProduct *)product{
@@ -1985,20 +2394,65 @@
     [[SKPaymentQueue defaultQueue] addPayment:payment];
 }
 
+// Sent when an error is encountered while adding transactions from the user's purchase history back to the queue.
+- (void)paymentQueue:(SKPaymentQueue *)queue restoreCompletedTransactionsFailedWithError:(NSError *)error
+{
+    LOG_NSERROR(error);
+    [self displayDonated:_donated capable:[SKPaymentQueue canMakePayments] processing:NO];
+    
+    UIAlertController* alert = [UIAlertController alertControllerWithTitle:@"Transaction error"
+                                                                   message:error.localizedDescription
+                                                            preferredStyle:UIAlertControllerStyleAlert];
+    
+    [alert addAction:[self actionWithTitle:@"OK" style:UIAlertActionStyleDestructive
+                                buttonName:kButtonA
+                                   keyName:kKeyReturn
+                                   handler:nil]];
+    [self presentViewController:alert animated:YES completion:nil];
+}
+
 
 - (void) paymentQueueRestoreCompletedTransactionsFinished:(SKPaymentQueue *)queue
 {
     DEBUG_LOG(@"received restored transactions: %lu", (unsigned long)queue.transactions.count);
+    
+    bool restored = NO;
     for(SKPaymentTransaction *transaction in queue.transactions){
         if(transaction.transactionState == SKPaymentTransactionStateRestored){
             //called when the user successfully restores a purchase
             DEBUG_LOG(@"Transaction state -> Restored");
-
+            restored = YES;
             [self donated];
             [[SKPaymentQueue defaultQueue] finishTransaction:transaction];
             break;
         }
     }
+
+    [self displayDonated:_donated capable:[SKPaymentQueue canMakePayments] processing:NO];
+    
+    if (!restored)
+    {
+        UIAlertController* alert = [UIAlertController alertControllerWithTitle:@"Donation"
+                                                                       message:@"Sorry, could not find a donation to restore."
+                                                                preferredStyle:UIAlertControllerStyleAlert];
+        
+        [alert addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
+        
+        
+        [self presentViewController:alert animated:YES completion:nil];
+    }
+    else
+    {
+        UIAlertController* alert = [UIAlertController alertControllerWithTitle:@"Donation"
+                                                                       message:@"Restored! Thanks."
+                                                                preferredStyle:UIAlertControllerStyleAlert];
+        
+        [alert addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
+        
+        
+        [self presentViewController:alert animated:YES completion:nil];
+    }
+    
 }
 
 - (void)paymentQueue:(SKPaymentQueue *)queue updatedTransactions:(NSArray *)transactions{
@@ -2023,23 +2477,46 @@
                 [self donated]; //you can add your code for what you want to happen when the user buys the purchase here, for this tutorial we use removing ads
                 [[SKPaymentQueue defaultQueue] finishTransaction:transaction];
                 DEBUG_LOG(@"Transaction state -> Purchased");
+                [self displayDonated:_donated capable:[SKPaymentQueue canMakePayments] processing:NO];
                 break;
             case SKPaymentTransactionStateRestored:
                 DEBUG_LOG(@"Transaction state -> Restored");
                 //add the same code as you did from SKPaymentTransactionStatePurchased here
                 [self donated];
                 [[SKPaymentQueue defaultQueue] finishTransaction:transaction];
+                [self displayDonated:_donated capable:[SKPaymentQueue canMakePayments] processing:NO];
                 break;
             case SKPaymentTransactionStateFailed:
                 //called when the transaction does not finish
+                DEBUG_LOGO(transaction);
+                LOG_NSERROR(transaction.error);
+                
                 if(transaction.error.code == SKErrorPaymentCancelled){
                     DEBUG_LOG(@"Transaction state -> Cancelled");
                     //the user cancelled the payment ;(
                 }
+                else
+                {
+                    UIAlertController* alert = [UIAlertController alertControllerWithTitle:@"Transaction error"
+                                                                                   message:transaction.error.localizedDescription
+                                                                            preferredStyle:UIAlertControllerStyleAlert];
+                    
+                    [alert addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
+                    
+                    
+                    [self presentViewController:alert animated:YES completion:nil];
+                    
+                }
                 [[SKPaymentQueue defaultQueue] finishTransaction:transaction];
+                [self displayDonated:_donated capable:[SKPaymentQueue canMakePayments] processing:NO];
                 break;
         }
     }
+}
+
+- (AugmentedSegmentControl*)speedSegment
+{
+    return nil;
 }
 
 @end

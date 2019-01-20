@@ -30,10 +30,10 @@
 /**********************************
 *      function declarations      *
 ***********************************/
-extern int rscreen();
-extern int savescore();
-extern void map();
-extern void check_legality();
+extern  int rscreen(int ,int *, const char*);
+extern  int savescore(char *,int ,int ,char *);
+extern  void map(char (*)[ROWLEN+1]);
+extern void check_legality(void);
 
 /***********************************
 *         Global Variables         *

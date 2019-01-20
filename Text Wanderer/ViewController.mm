@@ -73,9 +73,9 @@ extern "C"
     
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
         
-        _busy = TRUE;
+        self->_busy = TRUE;
         
-        char *howDead = onemove(&_num, &_score, &_bell, (char*)"kjhl", (game*)&_game, key);
+        char *howDead = onemove(&self->_num, &self->_score, &self->_bell, (char*)"kjhl", (game*)&self->_game, key);
         
         NSString *dead = nil;
         

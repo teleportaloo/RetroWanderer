@@ -52,7 +52,7 @@
 #define DEBUG_LOGF(x)  DEBUG_LOG(@"%s: %f", #x, (float)(x))
 #define DEBUG_LOGLU(x) DEBUG_LOG(@"%s: %lu",#x, (unsigned long)(x))
 #define DEBUG_LOGLX(x) DEBUG_LOG(@"%s: %lx",#x, (unsigned long)(x))
-#define DEBUG_LOGL(x)  DEBUG_LOG(@"%s: %ld",#x,  (long)(x))
+#define DEBUG_LOGL(x)  DEBUG_LOG(@"%s: %ld",#x, (long)(x))
 #define DEBUG_LOGS(x)  DEBUG_LOG(@"%s: %@", #x, (x))
 #define DEBUG_LOGB(x)  DEBUG_LOG(@"%s: %@", #x, ((x)? @"TRUE" : @"FALSE"))
 #define DEBUG_LOGO(x)  DEBUG_LOG(@"%s: %@", #x, (x).debugDescription);

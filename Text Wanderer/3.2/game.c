@@ -27,15 +27,15 @@
 
 extern int move_monsters(int *mxp, int *myp, long *score, char **howdead, int sx, int sy, int nf, int bell, int x, int y, int diamonds);
 
-extern void showname();
-extern int jumpscreen();
-extern int check();
-extern void showpass();
-extern void display();
-extern int fall();
-extern void map();
-extern void redraw_screen();
-extern struct mon_rec *make_monster();
+extern void showname(void);
+extern  int jumpscreen(int );
+extern  int check(int *,int *,int ,int ,int ,int ,int ,int ,char **);
+extern  void showpass(int );
+extern  void display(int ,int ,char (*)[ROWLEN+1],long );
+extern  int fall(int *,int *,int ,int ,int ,int ,char **);
+extern  void map(char (*)[ROWLEN+1]);
+void redraw_screen(int *bell,int maxmoves,int num,long score,int nf,int diamonds,int mx,int sx,int sy,char (*frow)[ROWLEN+1]);
+extern struct mon_rec *make_monster(int ,int );
 
 /***************************************************************
 *         function declarations    from this file              *

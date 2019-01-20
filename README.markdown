@@ -2,7 +2,7 @@
 Retro Wanderer
 ==============
 
-Wanderer is an old open source DOS / Linux game that I loved, I played when I was a graduate student in 1991.  I had to port it to the iPad so 
+Wanderer is an old open source DOS / Linux game that I loved, I played when I was a graduate student in 1991.  I had to port it to the iPad and iPhone so 
 I could play it again.  I'm hoping other people will love it.
 
 It was originally a curses based text game, but I updated it with emoji, and a little bit of drawing to make the rock look better.  I used the sprite kit 
@@ -13,7 +13,7 @@ This is offered under the GPL.
 Notes:
 * Text Wanderer is a quick port to a text based version to prove the old code would compile and work.
 * Retro Wanderer is the sprite graphics based version.
-* Compiled with Xcode 8.3.2 for iPad iOS 10.3 and above only - this was just the easiest to get going.
+* Compiled with Xcode 8.3.2 for iOS 10.3 and above only - this was just the easiest to get going.
 * I had to make one fix to the game engine so that the baby monsters would not go out of bounds. The screens all seem to work still!
 
 US App Store: https://appsto.re/us/xnr2jb.i
@@ -42,6 +42,8 @@ No monsters were harmed while developing this game.
 Versions:
 - 1.0 First version
 - 1.1 Added donate button, fixed zero score issue and settings.
+- 2.0 Added iPhone version, iCloud support, exrernal keyboard support.
+- 2.1 Added option to playback moves to just before death;  tidied up for Xcode 10; GUI tweaks
 
 Original WANDERER CREDITS
 =========================

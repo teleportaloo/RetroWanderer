@@ -37,7 +37,7 @@
     CGContextRef context = UIGraphicsGetCurrentContext();
     
     CGContextSetStrokeColorWithColor(context, [UIColor brownColor].CGColor);
-    CGContextSetLineWidth(context, 1.0);
+    CGContextSetLineWidth(context, 2.0);
     
     CGContextMoveToPoint(context, 0, 0);
     CGContextAddLineToPoint(context, kTileWidth, kTileHeight);

@@ -50,10 +50,10 @@ void map(char (*row_ptr)[ROWLEN+1])
     char ch;
 
     ad_move(0,0);
-    ad_addch_init(' ');
+    ad_addch_init('=');
     for(x = 0;x < ROWLEN; x++)
         ad_addch_init('-');
-    ad_addch(' ');
+    ad_addch('=');
     for(y = 0;y < NOOFROWS; y++)
     {
         ad_move(y+1,0);
@@ -71,10 +71,10 @@ void map(char (*row_ptr)[ROWLEN+1])
         row_ptr++;
     }
     ad_move(y+1,0);
-    ad_addch_init(' ');
+    ad_addch_init('=');
     for(x = 0;x < ROWLEN; x++)
         ad_addch_init('-');
-    ad_addch_init(' ');
+    ad_addch_init('=');
     ad_init_completed();
     ad_refresh();
 }
@@ -118,10 +118,7 @@ void showname()
 /******************************************************************
 *                           redraw_screen                         *
 *******************************************************************/
-void redraw_screen(bell,maxmoves,num,score,nf,diamonds,mx,sx,sy,frow)
-    int *bell,maxmoves,num,nf,diamonds,mx,sx,sy;
-    long score;
-    char (*frow)[ROWLEN+1];
+void redraw_screen(int *bell,int maxmoves,int num,long score,int nf,int diamonds,int mx,int sx,int sy,char (*frow)[ROWLEN+1])
 {
     ad_score(score);
     ad_diamonds(nf, diamonds);

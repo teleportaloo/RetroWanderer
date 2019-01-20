@@ -51,7 +51,6 @@
 @property (nonatomic) double animationDuration;
 @property (nonatomic) double playerDuration;
 @property (nonatomic) bool sounds;
-@property (nonatomic, copy) NSString *screenNumber;
 @property (nonatomic, copy) NSString *screenName;
 @property (nonatomic, retain) NSMutableArray<dispatch_block_t> *sequence;
 @property (nonatomic, retain) NSMutableArray<dispatch_block_t> *slowGroup;
@@ -63,19 +62,18 @@
 @property (nonatomic) double waitActionDuration;
 @property (nonatomic, retain) NSMutableDictionary<NSNumber *, SKAction*> *fastMoveCache;
 @property (nonatomic) int cacheHits;
-
+@property (nonatomic, copy) NSString *screenPrefix;
+@property (nonatomic) int screenNumber;
 
 
 
 - (void)deadPlayer;
 - (void)sunglassesPlayer;
 - (void)normalPlayer;
+- (void)flashingPlayer;
 - (void)happyPlayer;
 - (void)runSequenceWithCompletion:(dispatch_block_t)sequenceCompletionBlock;
 - (void)cancelSequenceWithCompletion:(dispatch_block_t)sequenceCancellationBlock;
-
-
-
-
+- (void)updateName;
 
 @end

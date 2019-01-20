@@ -82,23 +82,38 @@ extern void ad_set_display(id<AbstractedDisplay> display);
     
 }
 
-
-- (bool)updateLabel:(UILabel *)label text:(NSString *)text
+- (bool)runSyncOnMainQueueWithoutDeadlocking:(void (^)(void))block
 {
+    static dispatch_once_t onceTokenAndKey;
+    static void *contextValue = (void*)1;
+    
+    dispatch_once(&onceTokenAndKey, ^{
+        dispatch_queue_main_t queue = dispatch_get_main_queue();
+        dispatch_queue_set_specific (queue, &onceTokenAndKey, contextValue, NULL);
+    });
+    
     bool background = NO;
-    if ([NSThread isMainThread])
+    if (dispatch_get_specific (&onceTokenAndKey) == contextValue)
     {
-        label.text = text;
+        block ();
     }
     else
     {
-        dispatch_sync(dispatch_get_main_queue(), ^(){
-            label.text = text;
-        });
         background = YES;
+        dispatch_sync (dispatch_get_main_queue(), block);
     }
     
     return background;
+}
+
+- (bool)updateLabel:(UILabel *)label text:(NSString *)text
+{
+    return [self runSyncOnMainQueueWithoutDeadlocking:^{
+        if (label)
+        {
+            label.text = text;
+        }
+    }];
 }
 
 - (void) ad_refresh

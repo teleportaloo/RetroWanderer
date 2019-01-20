@@ -24,6 +24,7 @@
 #import "SpriteDisplay.h"
 #import <GameController/GameController.h>
 #import <StoreKit/StoreKit.h>
+#import "DirectionClusterControl.h"
 
 #define kMaxScreen 60
 #define kFinalScreen 61
@@ -33,6 +34,48 @@ extern "C"
 #include "wand_head.h"
 }
 
+
+#define kButtonA            @"(A)"
+#define kButtonB            @"(B)"
+#define kButtonX            @"(X)"
+#define kButtonY            @"(Y)"
+#define kButtonL1           @"(L1)"
+#define kButtonR1           @"(R1)"
+#define kButtonL2           @"(L2)"
+#define kButtonR2           @"(R2)"
+#define kButtonL            @"(←)"
+#define kButtonR            @"(→)"
+#define kButtonU            @"(↑)"
+#define kButtonD            @"(↓)"
+#define kButtonPause        @"(||)"
+
+#define kKeyReturn          @"\n"
+#define kKeyR               @"r"
+#define kKeyN               @"n"
+#define kKeyP               @"p"
+#define kKeyQ               @"q"
+#define kKeyD               @"d"
+#define kKeyW               @"w"
+#define kKeyS               @"s"
+#define kKeyX               @"x"
+#define kKeyM               @"m"
+#define kKeyN               @"n"
+
+
+
+
+#define CGPointOffsetted(A, B) CGPointMake((A).x + (B).x, (A).y + (B).y)
+
+
+
+#define kSegStep            0
+#define kSegSlowMo          1
+#define kSegSlow            2
+#define kSegFast            3
+
+@class AugmentedSegmentControl;
+
+
 typedef void (^AlertBlock)(UIAlertAction *action);
 typedef void (^ButtonAction)();
 
@@ -40,7 +83,8 @@ enum NextAction
 {
     NextActionDoNothing,
     NextActionInitScreen,
-    NextActionMove
+    NextActionMove,
+    NextActionPlayback
 };
 
 enum PlaybackState
@@ -48,7 +92,8 @@ enum PlaybackState
     PlaybackRecording,
     PlaybackStepping,
     PlaybackOverrun,
-    PlaybackDone
+    PlaybackDone,
+    PlaybackDead
 };
 
 @interface GameViewController : UIViewController <SpriteDisplayDelegate, SKProductsRequestDelegate, SKPaymentTransactionObserver>
@@ -66,86 +111,98 @@ enum PlaybackState
     bool _donated;
     bool _initialRapidFire;
     CGRect _gameRect;
+    bool _reinitForRetro;
+    bool _busyTouched;
+    bool _normalFlashing;
 }
 
-
+@property (nonatomic) bool gameCenter;
 @property (nonatomic, strong) GCController *controller;
-@property (atomic) NextAction nextAction;
-@property (atomic) PlaybackState playbackState;
+@property (atomic)  NextAction nextAction;
+@property (atomic)  PlaybackState playbackState;
 @property (atomic) int playbackPosition;
 @property (nonatomic, retain) SpriteDisplay *display;
 @property (atomic) char nextMove;
 @property (nonatomic, retain) NSMutableString *keyStrokes;
-@property (nonatomic, retain) NSString *previousKeyStrokes;
+@property (nonatomic, retain) NSString *savedKeyStrokes;
+@property (nonatomic, retain) NSString *playbackKeyStrokes;
+
 @property (atomic) bool controllerConnected;
 @property (nonatomic, retain) NSTimer *rapidFireTimer;
 @property (nonatomic, retain) GCControllerButtonInput *rapidFireControllerButton;
 @property (nonatomic) char rapidFireDirection;
 @property (nonatomic, retain) NSMutableDictionary<NSString *, NSDictionary *> *achievements;
 @property (nonatomic) double rapidFireDuration;
-@property (nonatomic) NSMutableDictionary<NSString *, AlertBlock>* alertActionMap;
-@property (nonatomic) NSMutableDictionary<NSString *, ButtonAction>* buttonActionMap;
-@property (strong, nonatomic) IBOutlet UIButton *startOverButton;
-@property (strong, nonatomic) IBOutlet UIButton *settingsButton;
-@property (strong, nonatomic) IBOutlet UILabel *achievementLabel;
-@property (strong, nonatomic) IBOutlet UILabel *nameLabel;
-@property (strong, nonatomic) IBOutlet UILabel *scoreLabel;
-@property (strong, nonatomic) IBOutlet UILabel *diamondsLabel;
-@property (strong, nonatomic) IBOutlet UILabel *maxMovesLabel;
-@property (strong, nonatomic) IBOutlet UILabel *monsterLabel;
-@property (strong, nonatomic) IBOutlet UILabel *busyLabel;
-@property (strong, nonatomic) IBOutlet UILabel *totalScoreLabel;
-@property (strong, nonatomic) IBOutlet UIButton *playbackButton;
-@property (strong, nonatomic) IBOutlet UIButton *leftButton;
-@property (strong, nonatomic) IBOutlet UISegmentedControl *playbackSpeedSeg;
-@property (strong, nonatomic) IBOutlet UIButton *upButton;
-@property (strong, nonatomic) IBOutlet UIButton *rightButton;
-@property (strong, nonatomic) IBOutlet UIButton *downButton;
-@property (strong, nonatomic) IBOutlet UIButton *stayButton;
-@property (strong, nonatomic) IBOutlet UIButton *previousButton;
-@property (strong, nonatomic) IBOutlet UIButton *nextButton;
-@property (strong, nonatomic) IBOutlet UILabel *controllerLabel;
-@property (strong, nonatomic) IBOutletCollection(UISwipeGestureRecognizer) NSArray *gestures;
+@property (nonatomic, retain) NSMutableDictionary<NSString *, AlertBlock>* alertActionMap;
+@property (nonatomic, retain) NSMutableDictionary<NSString *, ButtonAction>* buttonActionMap;
+@property (nonatomic, retain) NSMutableDictionary<NSString *, NSString *> *cellTextButton;
+@property (nonatomic, retain) id<NSObject> observerObj;
+@property (nonatomic, retain) NSArray<UIKeyCommand *>* keyCommands;
+
+@property (strong, nonatomic) IBOutlet SKView *spriteView;
+
 @property (nonatomic, readonly) int currentScreen;
-@property (strong, nonatomic) IBOutlet UIButton *stepButton;
-@property (strong, nonatomic) IBOutlet UIView *controlClusterView;
-@property (strong, nonatomic) IBOutlet UIView *screenClusterView;
-@property (strong, nonatomic) IBOutlet UIButton *saveCheckpointButton;
-@property (strong, nonatomic) IBOutlet UILabel *playbackMoves;
-@property (strong, nonatomic) IBOutlet UIButton *helpButton;
-@property (strong, nonatomic) IBOutlet UIButton *highScoresButton;
-@property (strong, nonatomic) IBOutlet UIButton *achievementsButton;
-@property (strong, nonatomic) IBOutlet UILabel *animatingLabel;
-@property (strong, nonatomic) IBOutlet UIButton *donateButton;
-@property (strong, nonatomic) IBOutlet UILabel *thanksLabel;
 
-- (IBAction)donate:(id)sender;
-- (IBAction)saveCheckpoint:(id)sender;
-- (IBAction)playbackPressed:(id)sender;
-- (IBAction)controlButtonUp:(id)sender;
-- (IBAction)playbackSpeedChanged:(id)sender;
-- (IBAction)up:(id)sender;
-- (IBAction)down:(id)sender;
-- (IBAction)left:(id)sender;
-- (IBAction)right:(id)sender;
-- (IBAction)stay:(id)sender;
-- (IBAction)previous:(id)sender;
-- (IBAction)next:(id)sender;
-- (IBAction)startOver:(id)sender;
-- (IBAction)swipeRight:(id)sender;
-- (IBAction)swipeLeft:(id)sender;
-- (IBAction)swipeUp:(id)sender;
-- (IBAction)swipeDown:(id)sender;
-- (IBAction)tapped:(UITapGestureRecognizer *)sender;
-- (IBAction)settingsTouched:(id)sender;
-- (IBAction)showHighScores:(id)sender;
-- (IBAction)showAchievements:(id)sender;
-- (IBAction)showHelp:(id)sender;
+@property (nonatomic, readonly) bool showNextScreen;
+@property (nonatomic, readonly) bool showPrevScreen;
+
+@property (nonatomic, retain) NSTimer *busyTimer;
 
 
+
+- (void)setButtonForController:(UIButton *)button title:(NSString *)title buttonName:(NSString *)buttonName keyName:(NSString*)keyName buttonOnRight:(bool)buttonOnRight space:(NSString *)space;
+- (void)setButtonForController:(UIButton *)button title:(NSString *)title buttonName:(NSString *)buttonName keyName:(NSString*)keyName buttonOnRight:(bool)buttonOnRight controllerFont:(UIFont *)controllerFont regularFont:(UIFont *)regularFont space:(NSString *)space;
+- (void)setButtonsForSeg:(AugmentedSegmentControl*)control titles:(NSArray<NSString*> *)titles firstButton:(NSString*)first restButton:(NSString*)rest restKey:(NSString*)key;
+- (void)setButtonForCell:(NSString *)cellText buttonName:(NSString *)buttonName action:(ButtonAction)action;
+- (NSString*)cellText:(NSString *)text buttonOnRight:(bool)right;
+
+- (void)actionDonate;
+- (void)actionSaveCheckpoint;
+- (void)actionPlayback;
+- (void)actionButtonUp;
+- (void)actionPlaybackSpeedChanged;
+- (void)actionDirection:(char)direction;
+- (void)actionPrevious;
+- (void)actionNext;
+- (void)actionStartOver;
+- (void)actionSwipeRight;
+- (void)actionSwipeLeft;
+- (void)actionSwipeUp;
+- (void)actionSwipeDown;
+- (void)actionTapped:(UITapGestureRecognizer *)sender;
+- (void)actionShowHighScores;
+- (void)actionShowAchievements;
+- (void)hideSegment:(UISegmentedControl *)ctrl;
+
+- (void)saveLevel;
+- (void)initScreen;
+- (long)totalScore;
+
+- (void)scheduleMove:(char)move;
+- (void)schedulePlayback;
 
 - (int)highest;
 - (void)processNextAction;
 - (void)changeToScreen:(int)screen review:(bool)review;
+- (NSDictionary*)achievementForScreen:(int)num;
+
+
+- (void)displayPlaybackMoves:(int)moves;
+- (void)displayBusyText:(NSString *)text;
+- (void)displayLeftHanded:(bool)left;
+- (void)displayGameCenter:(bool)enabled;
+- (void)displayDonated:(bool)donated capable:(bool)capable processing:(bool)processing;
+- (AugmentedSegmentControl *)speedSegment;
+
+- (void)displaySetLabels;
+- (int)getDisplayPlaybackSpeed;
+- (void)updateButtons;
+
+- (bool)showHelpOnce;
+
+- (void)controlClusterTouchedUp:(id)sender event:(UIEvent *)event;
+- (void)controlClusterTouched:(DirectionClusterControl *)sender event:(UIEvent *)event;
+- (void)showBusy:(bool)busy;
+
 
 @end

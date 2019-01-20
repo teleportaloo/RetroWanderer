@@ -21,14 +21,14 @@ enum
 
 
 
-void ad_clear();
+void ad_clear(void);
 void ad_draw_at(int y, int x, char ch);
 void ad_move(int y, int x);
 void ad_move_ch(char ch, int y, int x, int ny, int nx, char replace, char nch, char sound, int hint);
 void ad_addch(char ch);
 void ad_addch_init(char ch);
-void ad_init_completed();
-void ad_refresh();
+void ad_init_completed(void);
+void ad_refresh(void);
 void ad_sound(char sound);
 void ad_score(long score);
 void ad_diamonds(int nf, int total);

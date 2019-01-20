@@ -30,9 +30,10 @@
 extern char screen[NOOFROWS][ROWLEN+1];
 extern int saved_game;
 extern char screen_name[ROWLEN+1];
-extern void crypt_file();
-extern int inform_me();
-extern void readstring();
+extern void crypt_file(void);
+extern int voidinform_me(void);
+extern void readstring(void);
+void inform_me(char *str, int qable);
 
 struct saved_game
 {
@@ -49,6 +50,7 @@ extern struct mon_rec start_of_list, *tail_of_list;
 
 #define BUF_SIZ 70
 
+
 /*********************************************************
 *                    function save_game                  *
 **********************************************************/
@@ -59,7 +61,7 @@ void save_game(num, score, bell, maxmoves)
         char   fname[128], buf[BUF_SIZ], *fp;
         FILE   *fo;
         struct saved_game  s;
-        extern char        *getenv();
+        extern char        *getenv(const char*);
         struct mon_rec     *mp;
 
         if ((char *)NULL == (fp = getenv("SAVENAME")))
@@ -114,7 +116,7 @@ void save_game(num, score, bell, maxmoves)
             if(1 != fwrite((char *)mp, sizeof(struct mon_rec), 1, fo))
             {
                 snprintf(buf,BUF_SIZ,"Write error on '%s'\n", fname);
-                inform_me(buf);
+                inform_me(buf,0);
                 fclose(fo);
                 unlink(fname);
                 return;
@@ -147,7 +149,7 @@ long *score;
     char        fname[128], *fp;
     // char        *m_terminate = NULL;
     // FILE        *fo;
-    extern        char        *getenv();
+    extern        char        *getenv(const char *);
 
     if ((char *)NULL == (fp = getenv("SAVENAME")))
     {
@@ -242,3 +244,4 @@ long *score;
     unlink(fp);
     saved_game = 1;
 }
+

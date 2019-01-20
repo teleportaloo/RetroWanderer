@@ -30,7 +30,7 @@
     return e;
 }
 
-+ (instancetype)withEmoji:(NSString *)emoji fgColor:(UIColor *)fgColor
++ (instancetype)withEmoji:(NSString *)emoji fg:(UIColor *)fgColor
 {
     WandererEmojiFactory *e = [[[self class] alloc] init];
     e.emoji = emoji;
@@ -39,7 +39,7 @@
     return e;
 }
 
-+ (instancetype)withEmoji:(NSString *)emoji bgColor:(UIColor *)bgColor
++ (instancetype)withEmoji:(NSString *)emoji bg:(UIColor *)bgColor
 {
     WandererEmojiFactory *e = [[[self class] alloc] init];
     e.emoji = emoji;
@@ -51,8 +51,8 @@
 - (UIImage *)getImage:(char)ch left:(char)left right:(char)right up:(char)up down:(char)down
 {
     UIImage * image = [self simpleCharacterTileImage:self.emoji
-                                                             bg:self.bgColor
-                                                             fg:self.fgColor];
+                                                  bg:self.bgColor
+                                                  fg:self.fgColor];
     
     return image;
 }

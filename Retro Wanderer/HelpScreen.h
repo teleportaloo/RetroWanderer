@@ -19,6 +19,8 @@
 
 #import <UIKit/UIKit.h>
 
+typedef void (^HelpAction)(void);
+
 @interface HelpScreen : UITableViewController
 
 @property (nonatomic, retain) NSArray<NSString *> *rowsInOrder;
@@ -28,6 +30,8 @@
 @property (nonatomic, retain) NSDictionary<NSString *, NSString *> *linkImages;
 @property (nonatomic, retain) NSDictionary<NSString *, NSString *> *titles;
 @property (nonatomic, retain) NSMutableArray<NSNumber *> *sectionStart;
+@property (nonatomic, copy) HelpAction action;
+@property (nonatomic)  bool iPad;
 
 
 @end

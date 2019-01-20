@@ -106,12 +106,12 @@ direction new_direction(x,y,bx,by)
     return out;
 }
 
+
+
 /***********************************************************
 *                   function move_monsters                 *
 ************************************************************/
-int move_monsters(mxp, myp, score, howdead, sx, sy, nf, bell, x, y, diamonds)
-                  int *mxp, *myp, *score, sx, sy, nf, bell, x, y, diamonds;
-                  char **howdead;
+int move_monsters(int *mxp, int *myp, int *score, char **howdead, int sx, int sy, int nf, int bell, int x, int y, int diamonds)
 {
     int xdirection, ydirection, hd, vd;
     int deadyet = 0;

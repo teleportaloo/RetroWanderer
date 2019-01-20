@@ -19,7 +19,7 @@
 
 #import "GameScene.h"
 #import "SpriteDisplay.h"
-#import "GameViewController.h"
+#import "GameViewControlleriPad.h"
 
 @interface GameScene ()
 

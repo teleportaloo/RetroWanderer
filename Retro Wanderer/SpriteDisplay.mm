@@ -31,7 +31,7 @@ extern "C"
 
 @implementation SpriteDisplay
 
-- (void)replace:(char) ch with:(WandererTextureFactory *)factory
+- (void)replace:(char) ch with:(WandererTextureFactory *)factory flashing:(WandererTextureFactory *)flashing
 {
     [WandererTile replaceFactory:ch with:factory];
     
@@ -49,6 +49,24 @@ extern "C"
                 tile.sprite.zPosition = 100;
                 [self.boardLayer addChild:tile.sprite];
                 _screen[y][x] = tile;
+            
+                if (flashing)
+                {
+                    SKTexture *original = tile.sprite.texture;
+                    SKTexture *highlight = [flashing getTexture:ch left:0 right:0 up:0 down:0];
+                
+                    SKAction *wait0 = [SKAction waitForDuration:0.33];
+                
+                    SKAction *block0 = [SKAction runBlock:^{
+                        tile.sprite.texture = original;
+                    }];
+                
+                    SKAction *block1 = [SKAction runBlock:^{
+                        tile.sprite.texture = highlight;
+                    }];
+                
+                    [tile.sprite runAction:[SKAction repeatActionForever:[SKAction sequence:@[wait0, block0, wait0, block1]]]];
+                }
             }
         }
     }
@@ -56,23 +74,28 @@ extern "C"
 
 - (void)deadPlayer
 {
-    [self replace:'@' with:[WandererEmojiFactory withEmoji:@"💀"]];
+    [self replace:'@' with:[WandererEmojiFactory withEmoji:@"💀"] flashing:nil];
 }
 
 - (void)sunglassesPlayer
 {
-    [self replace:'@' with:[WandererEmojiFactory withEmoji:@"😎"]];
+    [self replace:'@' with:[WandererEmojiFactory withEmoji:@"😎"] flashing:nil];
 }
 
 - (void)normalPlayer
 {
-    [self replace:'@' with:[WandererEmojiFactory withEmoji:@"😀"]];
+    [self replace:'@' with:[WandererEmojiFactory withEmoji:@"😀"] flashing:nil];
 }
 
+- (void)flashingPlayer
+{
+    [self replace:'@' with:[WandererEmojiFactory withEmoji:@"😀"]
+                  flashing:[WandererEmojiFactory withEmoji:@"😀" bg:[UIColor whiteColor]]];
+}
 
 - (void)happyPlayer
 {
-    [self replace:'@' with:[WandererEmojiFactory withEmoji:@"🤠"]];
+    [self replace:'@' with:[WandererEmojiFactory withEmoji:@"🤠"] flashing:nil];
 }
 
 - (instancetype)init {
@@ -96,6 +119,7 @@ extern "C"
 - (void) ad_clear
 {
     int x;
+
     for (int y=0; y<kBoardHeight; y++)
     {
         for (x =0; x<kBoardWidth; x++)
@@ -114,8 +138,9 @@ extern "C"
         [self.homeSprite removeAllActions];
         self.homeSprite = nil;
     }
-    
     [self normalPlayer];
+    
+    [self.boardLayer removeAllChildren];
 }
 
 - (void)runSequenceWithCompletion:(dispatch_block_t)sequenceCompletionBlock
@@ -593,22 +618,39 @@ extern "C"
     }
 }
 
-- (bool)updateLabel:(UILabel *)label text:(NSString *)text
+
+- (bool)runSyncOnMainQueueWithoutDeadlocking:(void (^)(void))block
 {
+    static dispatch_once_t onceTokenAndKey;
+    static void *contextValue = (void*)1;
+    
+    dispatch_once(&onceTokenAndKey, ^{
+        dispatch_queue_main_t queue = dispatch_get_main_queue();
+        dispatch_queue_set_specific (queue, &onceTokenAndKey, contextValue, NULL);
+    });
+    
     bool background = NO;
-    if ([NSThread isMainThread])
+    if (dispatch_get_specific (&onceTokenAndKey) == contextValue)
     {
-        label.text = text;
+        block ();
     }
     else
     {
-        dispatch_sync(dispatch_get_main_queue(), ^(){
-            label.text = text;
-        });
         background = YES;
+        dispatch_sync (dispatch_get_main_queue(), block);
     }
     
     return background;
+}
+
+- (bool)updateLabel:(UILabel *)label text:(NSString *)text
+{
+    return [self runSyncOnMainQueueWithoutDeadlocking:^{
+        if (label)
+        {
+            label.text = text;
+        }
+    }];
 }
 
 - (void) ad_refresh
@@ -623,7 +665,7 @@ extern "C"
 
 - (void) ad_diamondsNotFound:(int) nf total:(int)total
 {
-    [self updateLabel:self.diamondsLabel  text:[NSString stringWithFormat:@"Diamonds: %d/%d", nf, total]];
+    [self updateLabel:self.diamondsLabel  text:[NSString stringWithFormat:@"💎: %d/%d", nf, total]];
     
     if (nf == total)
     {
@@ -644,7 +686,7 @@ extern "C"
                     }
                     else
                     {
-                        factory = [WandererEmojiFactory withEmoji:@"🏠" bgColor:[UIColor whiteColor]];
+                        factory = [WandererEmojiFactory withEmoji:@"🏠" bg:[UIColor whiteColor]];
                     }
                     SKTexture *highlight = [factory getTexture:'X' left:0 right:0 up:0 down:0];
                     
@@ -689,7 +731,7 @@ extern "C"
 {
     if (monster)
     {
-        [self updateLabel:self.monsterLabel  text:@"Monster alert!"];
+        [self updateLabel:self.monsterLabel  text:@"👹"];
     }
     else
     {
@@ -699,21 +741,33 @@ extern "C"
 
 - (void)updateName
 {
-    if (self.screenName == nil || self.screenName.length==0)
+    NSMutableString *screenName = [NSMutableString string];
+    
+    if (self.screenPrefix)
     {
-        [self updateLabel:self.nameLabel text:self.screenNumber];
+        [screenName appendString:self.screenPrefix];
     }
     else
     {
-        [self updateLabel:self.nameLabel text:[NSString stringWithFormat:@"%@: %@", self.screenNumber, self.screenName]];
+        [screenName appendString:@"Screen "];
     }
+    
+    [screenName appendFormat:@"%d", self.screenNumber];
+    
+    if (self.screenName!=nil && self.screenName.length!=0)
+    {
+        [screenName appendString:@": "];
+        [screenName appendString:self.screenName];
+    }
+
+    [self updateLabel:self.nameLabel text:screenName];
 }
 
 - (void) ad_screen_number:(int)n
 {
-    self.screenNumber = [NSString stringWithFormat:@"Screen %d", n];
-    [self updateName];
+    self.screenNumber = n;
     
+    [self updateName];
 }
 
 - (void) ad_screen_name:(char *)name

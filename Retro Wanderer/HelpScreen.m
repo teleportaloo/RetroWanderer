@@ -20,6 +20,8 @@
 #import "HelpScreen.h"
 #import "WandererTile.h"
 #import <Social/Social.h>
+#import "SWRevealViewController/SWRevealViewController.h"
+#import "NSString+formatting.h"
 
 @interface HelpScreen ()
 
@@ -59,91 +61,38 @@
 }
 
 
-- (void)addSegmentToString:(UIFont *)font bold:(bool)boldText italic:(bool)italicText color:(UIColor *)color substring:(NSString *)substring string:(NSMutableAttributedString**)string
-{
-    UIFont *newFont = font;
-    
-    Class fontDesc = (NSClassFromString(@"UIFontDescriptor"));
-    
-    if ((boldText || italicText) && fontDesc !=nil)
-    {
-        UIFontDescriptor *fontDescriptor = font.fontDescriptor;
-        // DEBUG_LOGO(fontDescriptor);
-        uint32_t existingTraitsWithNewTrait = (boldText ? UIFontDescriptorTraitBold : 0 ) | (italicText ? UIFontDescriptorTraitItalic : 0);
-        fontDescriptor = [fontDescriptor fontDescriptorWithSymbolicTraits:existingTraitsWithNewTrait];
-        // DEBUG_LOGO(fontDescriptor);
-        UIFont *updatedFont = [UIFont fontWithDescriptor:fontDescriptor size:font.pointSize];
-        newFont = updatedFont;
-    }
-    
-    NSDictionary *attributes = @{NSForegroundColorAttributeName :color,
-                                 NSFontAttributeName            :newFont};
-    
-    
-    NSAttributedString  *segment =  [[NSAttributedString alloc] initWithString:substring attributes:attributes];
-    [*string appendAttributedString:segment];
-}
-
-- (bool)canTweet
-{
-    
-    Class messageClass = (NSClassFromString(@"SLComposeViewController"));
-    
-    if (messageClass != nil) {
-        
-        return YES;
-        
-        // if ([TWTweetComposeViewController canSendTweet]) {
-        //    return YES;
-        //}
-    }
-    
-    return NO;
-}
-
-
-
 - (void)tweet
 {
     UIAlertController* alert = [UIAlertController alertControllerWithTitle:@"Twitter"
                                                                    message:@"@RetroWanderer"
                                                             preferredStyle:UIAlertControllerStyleAlert];
     
-    if (self.canTweet)
+    UIViewController *presenter = self.presentingViewController;
+    
+    void(^openURL)(NSString*url) = nil;
+    
+    if (presenter == nil)
     {
-        [alert addAction:[UIAlertAction actionWithTitle:@"Send Tweet" style:UIAlertActionStyleDefault
-                                                handler:^(UIAlertAction * action) {
-                                                    SLComposeViewController *picker = [SLComposeViewController composeViewControllerForServiceType:SLServiceTypeTwitter];
-                                                    [picker setInitialText:@"@RetroWanderer"];
-                                                    
-                                                    picker.completionHandler =
-                                                    ^(SLComposeViewControllerResult result) {
-                                                        
-                                                    };
-                                                    
-                                                    [self presentViewController:picker animated:YES completion:nil];
-                                                    
-                                                }]];
+        presenter = self;
+        
+        openURL = ^(NSString*url){
+            [self openURL:url];
+        };
+    }
+    else
+    {
+        openURL = ^(NSString*url){
+            [[UIApplication sharedApplication] openURL:[NSURL URLWithString:url] options:@{} completionHandler:nil];
+        };
     }
     
-    
-    NSString *twitter=@"twitter://user?screen_name=@RetroWanderer";
-    
-    if ([[UIApplication sharedApplication] canOpenURL:[NSURL URLWithString:twitter]])
+    if ([[UIApplication sharedApplication] canOpenURL:[NSURL URLWithString:@"twitter:"]])
     {
         [alert addAction:[UIAlertAction actionWithTitle:@"Show in Twitter app" style:UIAlertActionStyleDefault
                                                 handler:^(UIAlertAction * action) {
-                                                    SLComposeViewController *picker = [SLComposeViewController composeViewControllerForServiceType:SLServiceTypeTwitter];
-                                                    [picker setInitialText:@"@RetroWanderer"];
-                                                    
-                                                    picker.completionHandler = ^(SLComposeViewControllerResult result) {
-                                                        
-                                                
-                                                        
-                                                    };
-                                                    
-                                                    [self presentViewController:picker animated:YES completion:nil];
-                                                    
+                                                    NSString *twitter=@"twitter://user?screen_name=RetroWanderer";
+                                                    openURL(twitter);
+                                                            
                                                 }]];
 
     }
@@ -153,119 +102,29 @@
         
         [alert addAction:[UIAlertAction actionWithTitle:@"Show Twitter on the web" style:UIAlertActionStyleDefault
                                                 handler:^(UIAlertAction * action) {
-                                                    [self openURL:twitterWeb];
+                                                    openURL(twitterWeb);
                                                 }]];
 
-       
     }
     
     
     [alert addAction:[UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel
                                    handler:nil]];
     
-    [self presentViewController:alert animated:YES completion:nil];
-    
-}
-
-
-// Use # as escape characters
-// #b - bold text on or off
-// #i - italic text on or off
-// #X For colors see the items just below
-
-- (NSAttributedString*)formatAttributedString:(NSString *)str regularFont:(UIFont *)regularFont
-{
-    NSMutableAttributedString *string = [NSMutableAttributedString alloc].init;
-    NSString *substring = nil;
-    
-    static NSDictionary *colors = nil;
-    
-    static dispatch_once_t onceToken;
-    dispatch_once(&onceToken, ^{
-        colors = @{
-                   @"0" : [UIColor blackColor],
-                   @"O" : [UIColor orangeColor],
-                   @"G" : [UIColor greenColor],
-                   @"A" : [UIColor grayColor],
-                   @"R" : [UIColor redColor],
-                   @"B" : [UIColor blueColor],
-                   @"Y" : [UIColor yellowColor],
-                   @"W" : [UIColor whiteColor] };
-        
-    });
-    
-    bool boldText   = NO;
-    bool italicText = NO;
-    unichar c;
-    UIColor *currentColor = [UIColor blackColor];
-    
-    NSScanner *escapeScanner = [NSScanner scannerWithString:str];
-    
-    escapeScanner.charactersToBeSkipped = nil;
-    
-    while (!escapeScanner.isAtEnd)
+    if (self.presentingViewController)
     {
-        [escapeScanner scanUpToString:@"#" intoString:&substring];
-        
-        // DEBUG_LOGS(substring);
-        
-        if (!escapeScanner.isAtEnd)
-        {
-            escapeScanner.scanLocation++;
-        }
-        
-        if (!escapeScanner.isAtEnd)
-        {
-            c = [str characterAtIndex:escapeScanner.scanLocation];
-            escapeScanner.scanLocation++;
-            
-            if (c=='#')
-            {
-                if (substring)
-                {
-                    substring = [substring stringByAppendingString:@"#"];
-                }
-                else
-                {
-                    substring = @"#";
-                }
-            }
-            
-            if (substring && substring.length > 0)
-            {
-                [self addSegmentToString:regularFont bold:boldText italic:italicText color:currentColor substring:substring string:&string];
-                substring = nil;
-            }
-            
-            if (c=='b')
-            {
-                boldText = !boldText;
-            }
-            else if (c=='i')
-            {
-                italicText = !italicText;
-            }
-            else if (c!='#')
-            {
-                NSString *colorKey = [NSString stringWithCharacters:&c length:1];
-                
-                UIColor *newColor = colors[colorKey];
-                
-                if (newColor!=nil)
-                {
-                    currentColor = newColor;
-                }
-            }
-        }
-        else
-        {
-            [self addSegmentToString:regularFont bold:boldText italic:italicText color:currentColor substring:substring string:&string];
-            substring = nil;
-        }
+        [self.presentingViewController dismissViewControllerAnimated:YES completion:^{
+            [presenter presentViewController:alert animated:YES completion:nil];
+        }];
+    }
+    else
+    {
+        [self presentViewController:alert animated:YES completion:nil];
     }
     
-    return string;
 }
+
+
 
 
 - (void)viewDidLoad {
@@ -283,13 +142,17 @@
     self.sectionStart = [NSMutableArray array];
     
     self.rowsInOrder = @[@"title0",
+                         @"Retro Wanderer is an old puzzle platform game similar to Boulderdash, Repton, XOR and others. Each of the 60 screens is a separate puzzle, nothing is random.",
+                         @"title1",
+                         @"@", @"*", @"X",
+                         @"#", @"C", @":", @"T", @"=", @"|", @"O", @"<", @">", @"+", @"S", @"!", @"/", @"\\", @"M", @"^",
+                         @"Touch 💾#B#bSave checkpoint#b#0 to save where you are, then ▶️#B#bStart playback#b#0 to play it back again. Each screen is saved separately.",
+                         @"The game will remember the moves for each screen you finish.",
+                         self.iPad ? @"Use a game controller! Buttons and dialog options are mapped to buttons on the controller too. To use an external keyboard, hold ⌘ to see the keys."
+                                   : @"Use a game controller! Buttons and dialog options are mapped to buttons on the controller too.",
+                         @"title3",
                          @"link4",
                          @"#iiOS port by #BAndrew Wallace#B#i",
-                         @"title1",
-                         @"*", @"X", @"@", @"#", @"C", @":", @"T", @"=", @"|", @"O", @"<", @">", @"+", @"S", @"!", @"/", @"\\", @"M", @"^",
-                         @"Touch #B#bSave checkpoint#b#0 to save where you are, then #B#bStart playback#b#0 to play it back again. Each screen is saved separately.",
-                         @"The game will remember the moves for each screen you finish.",
-                         @"Use a game controller! Buttons and dialog options are mapped to buttons on the controller too.",
                          @"title2",
                          @"link2",
                          @"link3",
@@ -297,9 +160,10 @@
                          ];
 #pragma clang diagnostic pop
     
-    self.textForCharacter = @{@"*" : @"Collect all the treasure...",
-                              @"X" : @"...then go home.",
-                              @"@" : @"This is you, use controls or swipe to move.",
+    self.textForCharacter = @{@"*" : @"You must collect all this treasure...",
+                              @"X" : @"...only then can you go home.",
+                              @"@" :  self.iPad ?  @"This is you, swipe to move, or use the control pad. Touch the middle to stay put. Controls will appear briefly at the start. Optimized for an MFi game controller or keyboard."
+                                                :  @"This is you, touch the gameboard to move as there are left and right control pads that will appear when you touch them. Controls will appear briefly at the start. Optimized for an MFi game controller. ",
                               @"#" : @"Solid rock.",
                               @"=" : @"More rock.",
                               @"|" : @"Even more rock.",
@@ -312,8 +176,8 @@
                               @"+" : @"Cage - holds baby monster and changes into diamonds.",
                               @"S" : @"Baby monster (kills you)\nWhen a baby monster hits a cage it is captured and you get #G50 points#0. The cage also becomes a diamond.",
                               @"!" : @"#R#bInstant#b annihilation#0.",
-                              @"/" : @"Slopes (boulder etc will slide off).",
-                              @"\\": @"Slopes (boulder etc will slide off).",
+                              @"/" : @"Slopes (boulders, balloons and arrows will slide off).",
+                              @"\\": @"Slopes (boulders, balloons and arrows  will slide off).",
                               @"M" : @"#b#RMonster#0#b (eats you up whole. Yum Yum Yum...) (#G100 points#0 - kill with a boulder or arrow).",
                               @"^" : @"Balloon - rises, and is popped by arrows. It does #i#bnot#b#i kill you."};
     
@@ -338,8 +202,9 @@
     
     self.titles = @{
                     @"title0" : @"#iRetro#i #bW A N D E R E R#b",
-                    @"title1" : @"Instructions",
-                    @"title2" : @"Links"
+                    @"title1" : @"How to play",
+                    @"title2" : @"Links",
+                    @"title3" : @"#bCredits#b"
                     };
     
 
@@ -405,7 +270,7 @@
     }
 
     
-    cell.textLabel.attributedText = [self formatAttributedString:stringToFormat regularFont:[UIFont systemFontOfSize:18]];
+    cell.textLabel.attributedText = [stringToFormat formatAttributedStringRegularFont:[UIFont systemFontOfSize:18]];
     cell.textLabel.numberOfLines = 0;
     
     if (textForCharacter)
@@ -461,8 +326,7 @@
     
     /* Section header is in 0th index... */
     
-    label.attributedText = [self formatAttributedString:self.titles[self.rowsInOrder[self.sectionStart[section].integerValue]]
-                                            regularFont:[UIFont systemFontOfSize:18]];
+    label.attributedText = [self.titles[self.rowsInOrder[self.sectionStart[section].integerValue]] formatAttributedStringRegularFont:[UIFont systemFontOfSize:18]];
     label.numberOfLines = 0;
     label.textAlignment = NSTextAlignmentCenter;
     [view addSubview:label];
@@ -500,6 +364,11 @@
     else if (maybeLink!=nil)
     {
         [self openURL:maybeLink];
+    }
+    
+    if (self.action)
+    {
+        self.action();
     }
 }
 
