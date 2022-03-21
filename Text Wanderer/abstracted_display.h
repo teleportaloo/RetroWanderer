@@ -9,17 +9,12 @@
 #ifndef abstracted_display_h
 #define abstracted_display_h
 
-
-
 #include <stdio.h>
 
-enum
-{
-    Hint_Slow,
-    Hint_Fast
+enum {
+    ad_hint_slow_and_grouped,
+    ad_hint_fast_and_sequenced
 };
-
-
 
 void ad_clear(void);
 void ad_draw_at(int y, int x, char ch);
@@ -32,11 +27,10 @@ void ad_refresh(void);
 void ad_sound(char sound);
 void ad_score(long score);
 void ad_diamonds(int nf, int total);
+void ad_teleport(void);
 void ad_maxmoves(int maxmoves);
 void ad_monster(int monster);
 void ad_screen_number(int n);
 void ad_screen_name(char *name);
-
-
 
 #endif /* abstracted_display_h */

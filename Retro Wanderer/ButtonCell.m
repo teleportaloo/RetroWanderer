@@ -1,26 +1,13 @@
-/***************************************************************************
- *  Copyright 2017 -   Andrew Wallace                                       *
- *                                                                          *
- *  This program is free software; you can redistribute it and/or modify    *
- *  it under the terms of the GNU General Public License as published by    *
- *  the Free Software Foundation; either version 2 of the License, or       *
- *  (at your option) any later version.                                     *
- *                                                                          *
- *  This program is distributed in the hope that it will be useful,         *
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of          *
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           *
- *  GNU General Public License for more details.                            *
- *                                                                          *
- *  You should have received a copy of the GNU General Public License       *
- *  along with this program; if not, write to the Free Software             *
- *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA               *
- *  02111-1307, USA.                                                        *
- ***************************************************************************/
+/*  Copyright 2017 -   Andrew Wallace  */
+
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #import "ButtonCell.h"
 
-#define kButtonSide (40)
-#define kButtonGap (10)
+#define kButtonSide      (40)
+#define kButtonGap       (10)
 #define kButtonRowHeight (50)
 
 
@@ -31,22 +18,17 @@
     // Initialization code
 }
 
-- (id)initWithStyle:(UITableViewCellStyle)style reuseIdentifier:(nullable NSString *)reuseIdentifier
-{
-    
-    if (self = [super initWithStyle:style reuseIdentifier:reuseIdentifier])
-    {
+- (id)initWithStyle:(UITableViewCellStyle)style reuseIdentifier:(nullable NSString *)reuseIdentifier {
+    if (self = [super initWithStyle:style reuseIdentifier:reuseIdentifier]) {
         self.buttonWidth = kButtonSide;
         self.buttonHeight = kButtonSide;
-        self.rowHeight  = kButtonRowHeight;
-        self.buttonGap  = kButtonGap;
+        self.rowHeight = kButtonRowHeight;
+        self.buttonGap = kButtonGap;
         self.selectionStyle = UITableViewCellSelectionStyleNone;
-        
     }
-    
+
     return self;
 }
-
 
 - (void)setSelected:(BOOL)selected animated:(BOOL)animated {
     [super setSelected:selected animated:animated];
@@ -54,41 +36,48 @@
     // Configure the view for the selected state
 }
 
-- (void)createButtons
-{
+- (void)createButtons {
+    if (self.buttons != nil) {
+        for (UIButton *button in self.buttons) {
+            [button removeFromSuperview];
+        }
+
+        self.buttons = nil;
+    }
+
     self.buttons = [NSMutableArray array];
-    for (int i=0;  i<self.numberOfButtons; i++)
-    {
-        CGRect frame = CGRectMake(self.buttonGap + (self.buttonGap + self.buttonWidth) * i,  (self.rowHeight - self.buttonHeight)/2, self.buttonWidth, self.buttonHeight);
+
+    for (int i = 0; i < self.numberOfButtons; i++) {
+        CGRect frame = CGRectMake(self.buttonGap + (self.buttonGap + self.buttonWidth) * i,  (self.rowHeight - self.buttonHeight) / 2, self.buttonWidth, self.buttonHeight);
         UIButton *button = [[UIButton alloc] initWithFrame:frame];
+        button.layer.cornerRadius = 5;
+        button.layer.masksToBounds = YES;
         self.buttons[i] = button;
         [button addTarget:self action:@selector(buttonTouched:) forControlEvents:UIControlEventTouchUpInside];
         [self.contentView addSubview:button];
     }
-    CGRect labelFrame = CGRectMake(self.buttonGap + (self.buttonGap + self.buttonWidth) , (self.rowHeight - self.buttonHeight)/2, (self.buttonWidth+self.buttonGap)*(self.numberOfButtons-1)-self.buttonGap , self.buttonHeight);
-    
+
+    CGRect labelFrame = CGRectMake(self.buttonGap + (self.buttonGap + self.buttonWidth), (self.rowHeight - self.buttonHeight) / 2, (self.buttonWidth + self.buttonGap) * (self.numberOfButtons - 1) - self.buttonGap, self.buttonHeight);
+
     self.rightLabel = [[UILabel alloc] initWithFrame:labelFrame];
-    
+
     [self.contentView addSubview:self.rightLabel];
 
     [self layoutSubviews];
 }
 
-- (void)buttonTouched:(id)sender
-{
+- (void)buttonTouched:(id)sender {
     UIButton *touched = (UIButton *)sender;
-    for (int i = 0; i<self.buttons.count; i++)
-    {
-        if (self.buttons[i] == touched)
-        {
+
+    for (int i = 0; i < self.buttons.count; i++) {
+        if (self.buttons[i] == touched) {
             self.action(i);
             break;
         }
     }
 }
 
-+ (CGFloat)cellHeight
-{
++ (CGFloat)cellHeight {
     return kButtonRowHeight;
 }
 

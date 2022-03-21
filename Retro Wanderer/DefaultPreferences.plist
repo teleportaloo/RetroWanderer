@@ -18,9 +18,11 @@
 	<integer>0</integer>
 	<key>animation_duration</key>
 	<real>0.05</real>
-	<key>retro</key>
-	<false/>
+	<key>style</key>
+	<integer>3</integer>
 	<key>left_handed</key>
+	<false/>
+	<key>next_screen_after_playback</key>
 	<false/>
 </dict>
 </plist>

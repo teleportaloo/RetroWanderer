@@ -1,106 +1,111 @@
-/***************************************************************************
- *  Copyright 2017 -   Andrew Wallace                                       *
- *                                                                          *
- *  This program is free software; you can redistribute it and/or modify    *
- *  it under the terms of the GNU General Public License as published by    *
- *  the Free Software Foundation; either version 2 of the License, or       *
- *  (at your option) any later version.                                     *
- *                                                                          *
- *  This program is distributed in the hope that it will be useful,         *
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of          *
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           *
- *  GNU General Public License for more details.                            *
- *                                                                          *
- *  You should have received a copy of the GNU General Public License       *
- *  along with this program; if not, write to the Free Software             *
- *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA               *
- *  02111-1307, USA.                                                        *
- ***************************************************************************/
+/*  Copyright 2017 -   Andrew Wallace  */
+
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #import "WandererTextureFactory.h"
 #import "WandererTile.h"
 
 @implementation WandererTextureFactory
 
-+ (instancetype)texture
-{
++ (instancetype)texture {
     return [[[self class] alloc] init];
 }
 
-- (SKTexture *)getTexture:(char)ch left:(char)left right:(char)right up:(char)up down:(char)down
-{
-    return [SKTexture textureWithImage:[self getImage:ch left:left right:right up:up down:down]];
++ (UIColor *)fillColor:(char)ch {
+    static NSDictionary<NSNumber *, UIColor *> *colors;
+    static dispatch_once_t once;
+
+    dispatch_once(&once, ^{
+        colors = @{
+            @kChGranite:  [UIColor brownColor],
+            @kChHoriz:  [UIColor grayColor],
+            @kChBrick:  [UIColor darkGrayColor],
+            @kChSide:  [UIColor grayColor],
+            @kChRampB:  [UIColor brownColor],
+            @kChRampF:  [UIColor brownColor]
+        };
+    });
+
+    UIColor *col = colors[@(ch)];
+
+    if (col == nil) {
+        return [UIColor grayColor];
+    }
+
+    return col;
 }
 
++ (UIColor *)borderColor {
+    return [UIColor colorWithWhite:0.6 alpha:1.0];
+}
 
-- (UIImage *)getImage:(char)ch left:(char)left right:(char)right up:(char)up down:(char)down
-{
-    unichar uch = ch;
-    UIImage * image = [self simpleCharacterTileImage:[NSString stringWithCharacters:&uch length:1]
-                                                  bg:nil
-                                                  fg:nil];
-    
+- (SKTexture *)getTexture:(TileNeighbors)neighbors {
+    return [SKTexture textureWithImage:[self getImage:neighbors]];
+}
+
+- (UIImage *)getImage:(TileNeighbors)neighbors {
+    unichar uch = neighbors.tile;
+    UIImage *image = [self simpleCharacterTileImage:[NSString stringWithCharacters:&uch length:1]
+                                                 bg:nil
+                                                 fg:nil];
+
     return image;
 }
 
-- (void)additionalDrawing
-{
-    
+- (void)additionalDrawing {
 }
 
-
--(UIImage*)simpleCharacterTileImage:(NSString *)text bg:(UIColor *)bg fg:(UIColor *)fg
-{
-    
+- (UIImage *)simpleCharacterTileImage:(NSString *)text bg:(UIColor *)bg fg:(UIColor *)fg {
     UIGraphicsBeginImageContextWithOptions(CGSizeMake(kTileWidth, kTileHeight), NO, 0);
     CGRect rect = CGRectMake(0, 0, kTileWidth, kTileHeight);
-    
-    if (bg!=nil)
-    {
-        [bg set];
-        UIRectFill(rect);
+
+    if (bg == nil) {
+        bg = [UIColor clearColor];
     }
-    
+
+    [bg set];
+    UIRectFill(rect);
+
     // if (bg == nil || fg!=nil)
     {
-        
         UIFont *font = nil;
-        
-        if ([text characterAtIndex:0] < 128)
-        {
-            font = [UIFont systemFontOfSize:26];
-        }
-        else
-        {
-            font = [UIFont systemFontOfSize:22];
 
+        if (text.length == 0) {
+            text = @"?";
         }
-        if (fg == nil)
-        {
-            fg = [UIColor whiteColor];
+
+        if ([text characterAtIndex:0] < 128) {
+            font = [UIFont fontWithName:@"Courier-Bold" size:28];
+        } else {
+            font = [UIFont systemFontOfSize:22];
+        }
+
+        if (fg == nil) {
+            fg = [UIColor greenColor];
         }
 
         NSMutableParagraphStyle *paragraphStyle = [[NSParagraphStyle defaultParagraphStyle] mutableCopy];
         paragraphStyle.alignment = NSTextAlignmentCenter;
-        
-        NSDictionary *attributes = @{NSFontAttributeName:font, NSForegroundColorAttributeName:fg, NSParagraphStyleAttributeName:paragraphStyle};
-        CGSize textSize = [text sizeWithAttributes: attributes];
-        CGRect textRect = CGRectMake((kTileWidth - textSize.width)/2, (kTileHeight-textSize.height)/2, textSize.width, textSize.height );
+
+        NSDictionary *attributes = @{ NSFontAttributeName: font, NSForegroundColorAttributeName: fg, NSBackgroundColorAttributeName: bg, NSParagraphStyleAttributeName: paragraphStyle };
+        CGSize textSize = [text sizeWithAttributes:attributes];
+        CGRect textRect = CGRectMake((kTileWidth - textSize.width) / 2, (kTileHeight - textSize.height) / 2, textSize.width, textSize.height);
         [text drawInRect:textRect withAttributes:attributes];
     }
-    
+
     [self additionalDrawing];
-    
+
     UIImage *newImage = UIGraphicsGetImageFromCurrentImageContext();
+
     UIGraphicsEndImageContext();
-    
+
     return newImage;
 }
 
-- (NSNumber *)key:(char)ch left:(char)left right:(char)right up:(char)up down:(char)down
-{
-    return @(ch);
+- (NSNumber *)key:(TileNeighbors)neighbors {
+    return @(neighbors.tile);
 }
-
 
 @end

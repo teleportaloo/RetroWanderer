@@ -1,21 +1,8 @@
-/***************************************************************************
- *  Copyright 2017 -   Andrew Wallace                                       *
- *                                                                          *
- *  This program is free software; you can redistribute it and/or modify    *
- *  it under the terms of the GNU General Public License as published by    *
- *  the Free Software Foundation; either version 2 of the License, or       *
- *  (at your option) any later version.                                     *
- *                                                                          *
- *  This program is distributed in the hope that it will be useful,         *
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of          *
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           *
- *  GNU General Public License for more details.                            *
- *                                                                          *
- *  You should have received a copy of the GNU General Public License       *
- *  along with this program; if not, write to the Free Software             *
- *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA               *
- *  02111-1307, USA.                                                        *
- ***************************************************************************/
+/*  Copyright 2017 -   Andrew Wallace  */
+
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #import "GameViewControlleriPad.h"
 #import "GameScene.h"
@@ -25,124 +12,110 @@
 #import "HelpScreen.h"
 #import "DebugLogging.h"
 #import "SettingsTableViewController.h"
+#import "Screens.h"
 
-
-
-
-#define kControllerText     @"Controller Connected. Use:\n● D-pad to move,\n● button 'A' to skip.\n"
+#define kControllerText @"Controller Connected. Use:\n● D-pad to move,\n● button 'A' to skip.\n"
 
 @implementation GameViewControlleriPad
 
 @dynamic spriteView;
 
-- (void)updateButtons
-{
-    self.previousButton.hidden = !(_num > 0);
-    self.nextButton.hidden = !(_num < self.highest);
-    
+- (void)updateButtons {
+    self.previousButton.hidden = !self.showPrevScreen;
+    self.nextButton.hidden = !self.showNextScreen;
+
     [self setButtonForController:self.previousButton title:@"⇤" buttonName:kButtonL1 keyName:kKeyQ buttonOnRight:YES controllerFont:[UIFont systemFontOfSize:15] regularFont:[UIFont systemFontOfSize:26] space:nil];
-    [self setButtonForController:self.nextButton     title:@"⇥" buttonName:kButtonR1 keyName:kKeyW buttonOnRight:NO  controllerFont:[UIFont systemFontOfSize:15] regularFont:[UIFont systemFontOfSize:26] space:nil];
-    
-    NSDictionary *achievement = [self achievementForScreen:_num];
-    
-    if (self.controllerConnected)
-    {
+    [self setButtonForController:self.nextButton title:@"⇥" buttonName:kButtonR1 keyName:kKeyW buttonOnRight:NO controllerFont:[UIFont systemFontOfSize:15] regularFont:[UIFont systemFontOfSize:26] space:nil];
+
+    int num = [Screens.sharedInstance screenFileNumberFromOrdinal:_ordinal];
+
+    NSDictionary *achievement = [self achievementForScreenNum:num];
+
+    if (self.controllerConnected) {
         self.controllerConnectedLabel.text = @"🎮";
-    }
-    else
-    {
+    } else {
         self.controllerConnectedLabel.text = @"";
     }
-    
-    if (achievement)
-    {
+
+    if (achievement) {
         NSDate *firstDone = achievement[kAchievementDate];
-        NSNumber *score   = achievement[kAchievementScore];
-        
-        if (firstDone)
-        {
+        NSNumber *score = achievement[kAchievementScore];
+
+        if (firstDone) {
             self.achievementLabel.text = [NSString stringWithFormat:@"Completed on %@ with screen score: %ld",
                                           [NSDateFormatter localizedStringFromDate:firstDone
                                                                          dateStyle:NSDateFormatterShortStyle
                                                                          timeStyle:NSDateFormatterShortStyle],
-                                          score!=nil ? score.longValue : 0
-                                          ];
+                                          score != nil ? score.longValue : 0
+                ];
         }
-    }
-    else
-    {
+    } else {
         self.achievementLabel.text = @"";
     }
-    
+
     self.totalScoreLabel.text = [NSString stringWithFormat:@"Total score: %ld", _total_score];
-    
-    switch (self.playbackState)
-    {
+
+    switch (self.playbackState) {
         case PlaybackStepping:
-            if (self.nextAction != NextActionPlayback)
-            {
+
+            if (self.nextAction != NextActionPlayback) {
                 [self setButtonForController:self.playbackButton title:@"Stop playback" buttonName:kButtonPause keyName:kKeyD buttonOnRight:YES space:nil];
                 self.playbackButton.hidden = NO;
-            }
-            else
-            {
+            } else {
                 self.playbackButton.hidden = YES;
             }
+
             self.buttonActionMap[kButtonY] = nil;
-            
+
             self.display.screenPrefix = @"Playing back screen ";
-            
+
             [self setButtonsForSeg:self.playbackSpeedSeg titles:@[@"Step", @"Slow Mo", @"Normal", @"Fast"] firstButton:kButtonA restButton:kButtonX restKey:kKeyX];
             self.playbackSpeedSeg.hidden = NO;
             self.saveCheckpointButton.hidden = YES;
             self.playbackMoves.hidden = NO;
-            if (self.controllerConnected)
-            {
+
+            if (self.controllerConnected) {
                 self.controllerLabel.text = @"Controller Connected. Use D-pad or Button 'A' to playback next move.";
                 self.controllerLabel.hidden = NO;
-            }
-            else
-            {
+            } else {
                 self.controllerLabel.hidden = YES;
             }
-            
+
             self.playbackProgress.hidden = NO;
-            if (_maxPlaybackMoves == 0)
-            {
+
+            if (_maxPlaybackMoves == 0) {
                 self.playbackProgress.progress = 0;
             }
-            
+
             break;
+
         case PlaybackOverrun:
         case PlaybackRecording:
             self.display.screenPrefix = @"Screen ";
-            
-            if (self.savedKeyStrokes)
-            {
+
+            if (self.savedKeyStrokes) {
                 [self setButtonForController:self.playbackButton title:@"Start playback" buttonName:kButtonY keyName:kKeyP buttonOnRight:YES space:nil];
                 self.playbackButton.hidden = NO;
                 self.buttonActionMap[kButtonPause] = nil;
-            }
-            else
-            {
+            } else {
                 self.playbackButton.hidden = YES;
             }
+
             [self hideSegment:self.playbackSpeedSeg];
             self.saveCheckpointButton.hidden = !_unsavedMoves;
             [self setButtonForController:self.saveCheckpointButton title:@"Save checkpoint" buttonName:kButtonX keyName:kKeyS buttonOnRight:YES space:nil];
             self.playbackMoves.hidden = YES;
             self.playbackProgress.hidden = YES;
-            if (self.controllerConnected)
-            {
+
+            if (self.controllerConnected) {
                 self.controllerLabel.text = kControllerText;
                 self.controllerLabel.hidden = NO;
-            }
-            else
-            {
+            } else {
                 self.controllerLabel.hidden = YES;
             }
-            
+
             break;
+
         case PlaybackDone:
             self.display.screenPrefix = @"Played back screen ";
             self.playbackButton.hidden = YES;
@@ -152,6 +125,7 @@
             self.playbackMoves.hidden = YES;
             self.playbackProgress.hidden = YES;
             break;
+
         case PlaybackDead:
             self.display.screenPrefix = @"Died on screen  ";
             self.playbackButton.hidden = YES;
@@ -162,43 +136,37 @@
             self.playbackProgress.hidden = YES;
             break;
     }
-    
+
     [self setButtonForController:self.startOverButton title:@"Start over" buttonName:kButtonB keyName:UIKeyInputEscape buttonOnRight:YES space:nil];
-    
-    self.startOverButton.hidden = !((self.keyStrokes.length!=0) || self.playbackState==PlaybackDone);
-    
+
+    self.startOverButton.hidden = !((self.keyStrokes.length != 0) || self.playbackState == PlaybackDone);
+
     self.controllerLabel.hidden = YES;
-    
-    if (self.playbackState!=PlaybackStepping && self.playbackState!=PlaybackDone)
-    {
-        self.controlClusterView.hidden = NO;
+
+    if (self.playbackState != PlaybackStepping && self.playbackState != PlaybackDone) {
+        self.controlClusterView.hidden = kIsMacIdiom;
         self.controlClusterView.upperView.stepMode = NO;
         self.controlClusterView.lowerView.stepMode = NO;
         [self.controlClusterView.lowerView showControls];
         [self.controlClusterView setNeedsDisplay];
-    }
-    else if (self.playbackSpeedSeg.selectedSegmentIndex != kSegStep)
-    {
+    } else if (self.playbackSpeedSeg.selectedSegmentIndex != kSegStep) {
         self.controlClusterView.hidden = YES;
         self.controlClusterView.upperView.stepMode = NO;
         self.controlClusterView.lowerView.stepMode = NO;
         [self.controlClusterView.lowerView showControls];
         [self.controlClusterView setNeedsDisplay];
-    }
-    else
-    {
-        self.controlClusterView.hidden = NO;
+    } else {
+        self.controlClusterView.hidden = kIsMacIdiom;
         self.controlClusterView.upperView.stepMode = YES;
         self.controlClusterView.lowerView.stepMode = YES;
         [self.controlClusterView.lowerView showControls];
         [self.controlClusterView setNeedsDisplay];
     }
-    
-   [self.display updateName];
+
+    [self.display updateName];
 }
 
-- (void)displaySetLabels
-{
+- (void)displaySetLabels {
     self.display.scoreLabel = self.scoreLabel;
     self.display.diamondsLabel = self.diamondsLabel;
     self.display.maxMovesLabel = self.maxMovesLabel;
@@ -208,134 +176,102 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
- 
+
     [self.controlClusterView showLowerView];
     self.controlClusterView.lowerView.NoLines = YES;
+
+    [self.playbackSpeedSeg fixColors];
 }
 
-
-- (void)viewDidAppear:(BOOL)animated
-{
+- (void)viewDidAppear:(BOOL)animated {
     [super viewDidAppear:animated];
-    
-    if ([self showHelpOnce])
-    {
+
+    if ([self showHelpOnce]) {
         [self showHelp:nil];
     }
 }
-
 
 - (BOOL)prefersStatusBarHidden {
     return YES;
 }
 
-- (void)displayBusyText:(NSString *)text
-{
-    self.busyLabel.text = [NSString stringWithFormat:@"%d %lu %lu", self.display.animationCount, (unsigned long)self.display.fastMoveCache.count, (unsigned long)self.display.cacheHits];
-    
+- (void)displayBusyText:(NSString *)text {
+    self.busyLabel.text = [NSString stringWithFormat:@"A-%d F-%lu C-%lu", self.display.animationCount, (unsigned long)self.display.fastMoveCache.count, (unsigned long)self.display.cacheHits];
 }
 
-- (void)displayPlaybackMoves:(int)moves
-{
-    self.playbackMoves.text = [NSString stringWithFormat:@"Playback moves: %d",moves];
-    
+- (void)displayPlaybackMoves:(int)moves {
+    self.playbackMoves.text = [NSString stringWithFormat:@"Playback moves: %d", moves];
+
     DEBUG_LOGL(moves);
     DEBUG_LOGL(_maxPlaybackMoves);
-    
-    if (_maxPlaybackMoves < moves)
-    {
+
+    if (_maxPlaybackMoves < moves) {
         _maxPlaybackMoves = moves;
     }
-    
-    if (_maxPlaybackMoves > 0)
-    {
-        [self.playbackProgress setProgress:1.0-((float)moves/(float)_maxPlaybackMoves) animated:YES];
-    }
-    
-    
-}
 
-- (void)displayLeftHanded:(bool)left
-{
-    if (left)
-    {
-        CGRect frame = self.controlClusterView.frame;
-        
-        self.controlClusterView.frame = CGRectMake(0,
-                                                   frame.origin.y, frame.size.width, frame.size.height);
-        
-        frame = self.screenClusterView.frame;
-        
-        self.screenClusterView.frame = CGRectMake(self.view.frame.size.width-frame.size.width,
-                                                  frame.origin.y, frame.size.width, frame.size.height);
-    }
-    else
-    {
-        CGRect frame = self.controlClusterView.frame;
-        
-        self.controlClusterView.frame = CGRectMake(self.view.frame.size.width-frame.size.width,
-                                                   frame.origin.y, frame.size.width, frame.size.height);
-        
-        frame = self.screenClusterView.frame;
-        
-        self.screenClusterView.frame = CGRectMake(0,
-                                                  frame.origin.y, frame.size.width, frame.size.height);
-        
+    if (_maxPlaybackMoves > 0) {
+        [self.playbackProgress setProgress:1.0 - ((float)moves / (float)_maxPlaybackMoves) animated:YES];
     }
 }
 
-- (void)displayGameCenter:(bool)enabled
-{
+- (void)displayLeftHanded:(bool)left {
+    if (left) {
+        self.screenControlClusterLeftConstraint.active = NO;
+        self.screenControlClusterRightConstraint.active = YES;
+
+        self.controlClusterLeftContraint.active = YES;
+        self.controlClusterRightContraint.active = NO;
+    } else {
+        self.controlClusterLeftContraint.active = NO;
+        self.controlClusterRightContraint.active = YES;
+
+        self.screenControlClusterLeftConstraint.active = YES;
+        self.screenControlClusterRightConstraint.active = NO;
+    }
+}
+
+- (void)displayGameCenter:(bool)enabled {
     self.highScoresButton.hidden = !_gameCenter;
     self.achievementsButton.hidden = !_gameCenter;
 }
 
-- (void)displayDonated:(bool)donated capable:(bool)capable processing:(bool)processing
-{
+- (void)displayDonated:(bool)donated capable:(bool)capable processing:(bool)processing {
     self.donateButton.hidden = _donated || !capable || processing;
-    
-    if (_donated)
-    {
+
+    if (_donated) {
         self.thanksLabel.text = @"❤️😀";
     }
-    self.thanksLabel.hidden  = !_donated;
+
+    self.thanksLabel.hidden = !_donated;
 }
 
-- (void)displayPlaybackSpeed:(int)playbackSpeed
-{
+- (void)displayPlaybackSpeed:(int)playbackSpeed {
     self.playbackSpeedSeg.selectedSegmentIndex = playbackSpeed;
 }
 
-- (int)getDisplayPlaybackSpeed
-{
+- (int)getDisplayPlaybackSpeed {
     return (int)self.playbackSpeedSeg.selectedSegmentIndex;
 }
 
 - (IBAction)saveCheckpoint:(id)sender {
-    if (!_busy)
-    {
+    if (!_busy) {
         [self actionSaveCheckpoint];
-    }
-    else
-    {
+    } else {
         AudioServicesPlayAlertSound(kSystemSoundID_Vibrate);
     }
 }
 
-- (IBAction)playbackPressed:(id)sender
-{
+- (IBAction)playbackPressed:(id)sender {
     _maxPlaybackMoves = 0;
     [self schedulePlayback];
     [self updateButtons];
 }
 
 - (IBAction)controlButtonUp:(id)sender {
-    
-    if ([sender isKindOfClass:[DirectionClusterControl class]])
-    {
-        [((DirectionClusterControl*)sender).upperView fadeOut];
+    if ([sender isKindOfClass:[DirectionClusterControl class]]) {
+        [((DirectionClusterControl *)sender).upperView fadeOut];
     }
-    
+
     [self actionButtonUp];
 }
 
@@ -343,37 +279,26 @@
     [self controlClusterTouched:sender event:event];
 }
 
-
 - (IBAction)startOver:(id)sender {
-    if (!_busy)
-    {
+    if (!_busy) {
         [self actionStartOver];
-    }
-    else
-    {
+    } else {
         AudioServicesPlayAlertSound(kSystemSoundID_Vibrate);
     }
 }
 
 - (IBAction)next:(id)sender {
-    if (!_busy)
-    {
+    if (!_busy) {
         [self actionNext];
-    }
-    else
-    {
+    } else {
         AudioServicesPlayAlertSound(kSystemSoundID_Vibrate);
     }
 }
 
-
 - (IBAction)previous:(id)sender {
-    if (!_busy)
-    {
+    if (!_busy) {
         [self actionPrevious];
-    }
-    else
-    {
+    } else {
         AudioServicesPlayAlertSound(kSystemSoundID_Vibrate);
     }
 }
@@ -391,117 +316,107 @@
 }
 
 - (IBAction)swipeDown:(id)sender {
-     [self actionSwipeDown];
+    [self actionSwipeDown];
 }
 
-- (IBAction)tapped:(UITapGestureRecognizer *)sender
-
-{
+- (IBAction)tapped:(UITapGestureRecognizer *)sender {
     [self actionTapped:sender];
 }
 
 - (IBAction)settingsTouched:(id)sender {
-    
     /*
-     [[UIApplication sharedApplication] openURL:[NSURL URLWithString:UIApplicationOpenSettingsURLString]
-     options:[NSDictionary dictionary]
-     completionHandler:nil];
-     
+       [[UIApplication sharedApplication] openURL:[NSURL URLWithString:UIApplicationOpenSettingsURLString]
+       options:[NSDictionary dictionary]
+       completionHandler:nil];
+
      */
-    
-    
+
+
     // grab the view controller we want to show
-    
+
     UINavigationController *controller = [[UINavigationController alloc] init];
-    
+
     UIViewController *settings = [[SettingsTableViewController alloc] init];
-    
+
     [controller pushViewController:settings animated:NO];
     controller.title = @"Settings";
 
-    
+
     // present the controller
     // on iPad, this will be a Popover
     // on iPhone, this will be an action sheet
     controller.modalPresentationStyle = UIModalPresentationPopover;
     [self presentViewController:controller animated:YES completion:nil];
-    
+
     // configure the Popover presentation controller
     UIPopoverPresentationController *popController = [controller popoverPresentationController];
+
     popController.permittedArrowDirections = UIPopoverArrowDirectionLeft;
     popController.sourceView = self.settingsButton;
-    
+
     const CGFloat side = 3;
     CGRect frame = self.settingsButton.frame;
-    CGRect sourceRect = CGRectMake(frame.size.width - side, (frame.size.height-side)/2.0, side, side);
-    
+    CGRect sourceRect = CGRectMake(frame.size.width - side, (frame.size.height - side) / 2.0, side, side);
+
     popController.sourceRect = sourceRect;
-    
 }
 
-- (void)showBusy:(bool)busy
-{
-    if (busy)
-    {
+- (void)showBusy:(bool)busy {
+    if (busy) {
         [self.activityIndicator startAnimating];
-    }
-    else
-    {
-         [self.activityIndicator stopAnimating];
+    } else {
+        [self.activityIndicator stopAnimating];
     }
 }
 
--(void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender{
-    if([segue.identifier isEqualToString:@"showScreenSelector"]){
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+    if ([segue.identifier isEqualToString:@"showScreenSelector"]) {
         ScreenSelector *controller = (ScreenSelector *)segue.destinationViewController;
         controller.gameView = self;
     }
 }
 
-- (IBAction)showHighScores:(id)sender
-{
+- (IBAction)showHighScores:(id)sender {
     [self actionShowHighScores];
 }
 
-- (IBAction)showAchievements:(id)sender
-{
+- (IBAction)showAchievements:(id)sender {
     [self actionShowAchievements];
 }
 
-- (IBAction)showHelp:(id)sender
-{
+- (IBAction)showHelp:(id)sender {
     // grab the view controller we want to show
     HelpScreen *controller = [[HelpScreen alloc] init];
-    
+
     controller.iPad = YES;
-    
+
+    controller.achievements = self.achievements;
+
     // present the controller
     // on iPad, this will be a Popover
     // on iPhone, this will be an action sheet
     controller.modalPresentationStyle = UIModalPresentationPopover;
     [self presentViewController:controller animated:YES completion:nil];
-    
+
     // configure the Popover presentation controller
     UIPopoverPresentationController *popController = [controller popoverPresentationController];
+
     popController.permittedArrowDirections = UIPopoverArrowDirectionRight;
     popController.sourceView = self.helpButton;
-    
+
     const CGFloat side = 3;
     CGRect frame = self.helpButton.frame;
-    CGRect sourceRect = CGRectMake(0, (frame.size.height-side)/2.0, side, side);
-    
+    CGRect sourceRect = CGRectMake(0, (frame.size.height - side) / 2.0, side, side);
+
     popController.sourceRect = sourceRect;
 }
 
-- (IBAction)playbackSpeedChanged:(id)sender
-{
+- (IBAction)playbackSpeedChanged:(id)sender {
     [self actionPlaybackSpeedChanged];
 }
 
-- (IBAction)donate:(id)sender
-{
+- (IBAction)donate:(id)sender {
     [self actionDonate];
 }
-
 
 @end

@@ -14,6 +14,8 @@
 //  This code is licensed under the BSD license that is available at: http://www.opensource.org/licenses/bsd-license.php
 //
 
+#if 0 
+
 #import <UIKit/UIKit.h>
 #import <MessageUI/MessageUI.h>
 #import "IASKSpecifier.h"
@@ -27,3 +29,5 @@
 @property (nonatomic, strong) NSString *customTitle;
 
 @end
+
+#endif

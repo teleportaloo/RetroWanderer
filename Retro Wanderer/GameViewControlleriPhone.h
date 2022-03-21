@@ -1,10 +1,9 @@
-//
-//  GameViewControlleriPhone.h
-//  Text Wanderer
-//
-//  Created by Andrew Wallace on 8/13/17.
-//  Copyright © 2017 Teleportaloo. All rights reserved.
-//
+/*  Copyright 2017 -   Andrew Wallace  */
+
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 
 #import <UIKit/UIKit.h>
 
@@ -12,8 +11,7 @@
 #import "SWRevealViewController/SWRevealViewController.h"
 #import "AugmentedSegmentControl.h"
 
-@interface GameViewControlleriPhone : GameViewController
-{
+@interface GameViewControlleriPhone : GameViewController {
     int _maxPlaybackMoves;
 }
 
@@ -49,7 +47,7 @@
 - (IBAction)stopPlaybackTouched:(id)sender;
 @property (strong, nonatomic) IBOutlet UIButton *stopPlaybackButton;
 
-@property (nonatomic, retain) NSMutableDictionary<NSString *, ButtonAction>* cellActions;
+@property (nonatomic, retain) NSMutableDictionary<NSString *, ButtonAction> *cellActions;
 @property (nonatomic, retain) DirectionClusterControl *directionControlLeft;
 @property (nonatomic, retain) DirectionClusterControl *directionControlRight;
 @property (strong, nonatomic) IBOutlet UIProgressView *playbackMoves;

@@ -1,28 +1,66 @@
-/***************************************************************************
- *  Copyright 2017 -   Andrew Wallace                                       *
- *                                                                          *
- *  This program is free software; you can redistribute it and/or modify    *
- *  it under the terms of the GNU General Public License as published by    *
- *  the Free Software Foundation; either version 2 of the License, or       *
- *  (at your option) any later version.                                     *
- *                                                                          *
- *  This program is distributed in the hope that it will be useful,         *
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of          *
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           *
- *  GNU General Public License for more details.                            *
- *                                                                          *
- *  You should have received a copy of the GNU General Public License       *
- *  along with this program; if not, write to the Free Software             *
- *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA               *
- *  02111-1307, USA.                                                        *
- ***************************************************************************/
+/*  Copyright 2017 -   Andrew Wallace  */
+
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #import <Foundation/Foundation.h>
+#import "TileNeighbors.h"
 
 #import <SpriteKit/SpriteKit.h>
 
-#define kTileWidth    28
-#define kTileHeight   32
+@class WandererTextureFactory;
+
+#define kTileWidth  28
+#define kTileHeight 32
+
+#define kTileRect   CGRectMake(0, 0, kTileWidth, kTileHeight)
+
+typedef enum eTileStyle {
+    kStyleNone          = -1,
+    kStyleRetro         =  0,
+    kStyleDos           =  1,
+    kStyleEmoji         =  2,
+    kStyleEmojiTextures =  3
+} tileStyle;
+
+
+
+#define kChPlayer  '@'
+#define kChMonster 'M'
+#define kChMine    '!'
+#define kChMoney   '*'
+#define kChLeft    '<'
+#define kChRight   '>'
+#define kChExit    'X'
+#define kChBaby    'S'
+#define kChCage    '+'
+#define kChTrans   'T'
+#define kChBalloon '^'
+#define kChClock   'C'
+#define kChEarth   ':'
+#define kChGranite '#'
+#define kChHoriz   '-'
+#define kChBrick   '='
+#define kChSide    '|'
+#define kChRampB   '\\'
+#define kChRampF   '/'
+#define kChRock    'O'
+
+
+typedef enum {
+    kHighlightedExit   = 1000,
+    kPlaybackPLayer    = 1001,
+    kHappyPlayer       = 1002,
+    kDeadPlayer        = 1003,
+    kFlashingPlayer    = 1004,
+    kHighlightedPlayer = 1005,
+    kTeleportedPlayer  = 1006,
+    kNormalPlayer      = kChPlayer,
+    kNormalExit        = kChExit
+} kSpecialTiles;
+
+typedef NSMutableDictionary<NSNumber *, WandererTextureFactory *> FACTORIES;
 
 @class WandererTextureFactory;
 
@@ -31,13 +69,15 @@
 @property (assign, nonatomic) char ch;
 @property (strong, nonatomic) SKSpriteNode *sprite;
 
-+ (instancetype)tileFromCh:(char) ch;
++ (instancetype)tileFromCh:(char)ch;
 + (instancetype)initTileFromCh:(char)ch;
-- (void)initSpriteWithNeighborsLeft:(char)left right:(char)right up:(char)up down:(char)down;
-+ (void)setRetro:(bool)newRetro;
-+ (bool)retro;
+- (void)initSpriteWithNeighbors:(TileNeighbors)neighbors;
++ (void)setStyle:(tileStyle)newStyle;
++ (tileStyle)style;
 + (void)replaceFactory:(char)ch with:(WandererTextureFactory *)tile;
++ (WandererTextureFactory *)specialFactory:(NSInteger)ch;
 - (UIImage *)image;
-
++ (FACTORIES *)getFactoriesForStyle:(tileStyle)style;
++ (FACTORIES *)getSpecialFactoriesForStyle:(tileStyle)style;
 
 @end

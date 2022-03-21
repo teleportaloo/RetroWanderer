@@ -1,4 +1,4 @@
-#             instructions             -
+#=============instructions==============
 #              this is you @           -
 #collect all the diamonds   ****       -
 #boulders will fall down      O     OO -
@@ -6,12 +6,12 @@
 #push arrows and boulders   O#### O   \-
 #and kill a monster         OM  ===    -
 # (but this one is trapped) =  *=      /
-#teleport through the door  #####T     -
-#get extra time with a clock#    C     -
+#teleport through the door  #####T   \ -
+#get extra time with a clock#    C    \-
 #baby monsters follow a path#   S####  -
-#and unlock diamonds        #   #A* +  -
-#dig the earth              #:::#####  -
-#avoid the dynamite         !!!        -
+#and unlock diamonds        #   #A* +  /
+#dig the earth              #:::#####::-
+#avoid the dynamite         !!!       \-
 #get to your home           X          -
 #don't run out of moves     ###########-
 Welcome to Retro Wanderer

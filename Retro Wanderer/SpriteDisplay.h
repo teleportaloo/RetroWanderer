@@ -1,21 +1,8 @@
-/***************************************************************************
- *  Copyright 2017 -   Andrew Wallace                                       *
- *                                                                          *
- *  This program is free software; you can redistribute it and/or modify    *
- *  it under the terms of the GNU General Public License as published by    *
- *  the Free Software Foundation; either version 2 of the License, or       *
- *  (at your option) any later version.                                     *
- *                                                                          *
- *  This program is distributed in the hope that it will be useful,         *
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of          *
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           *
- *  GNU General Public License for more details.                            *
- *                                                                          *
- *  You should have received a copy of the GNU General Public License       *
- *  along with this program; if not, write to the Free Software             *
- *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA               *
- *  02111-1307, USA.                                                        *
- ***************************************************************************/
+/*  Copyright 2017 -   Andrew Wallace  */
+
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #import <Foundation/Foundation.h>
 #import "abstracted_display_objc.h"
@@ -33,8 +20,7 @@
 
 @end
 
-@interface SpriteDisplay : NSObject <AbstractedDisplay>
-{
+@interface SpriteDisplay : NSObject <AbstractedDisplay> {
     WandererTile *_screen[kBoardHeight][kBoardWidth];
     bool _cancelling;
 }
@@ -42,11 +28,11 @@
 @property (weak, nonatomic)  id<SpriteDisplayDelegate> delegate;
 @property (strong, nonatomic) SKNode *boardLayer;
 @property (weak, nonatomic)   UIView *view;
-@property (nonatomic, retain) UILabel* scoreLabel;
-@property (nonatomic, retain) UILabel* diamondsLabel;
-@property (nonatomic, retain) UILabel* maxMovesLabel;
-@property (nonatomic, retain) UILabel* monsterLabel;
-@property (nonatomic, retain) UILabel* nameLabel;
+@property (nonatomic, retain) UILabel *scoreLabel;
+@property (nonatomic, retain) UILabel *diamondsLabel;
+@property (nonatomic, retain) UILabel *maxMovesLabel;
+@property (nonatomic, retain) UILabel *monsterLabel;
+@property (nonatomic, retain) UILabel *nameLabel;
 @property (nonatomic, retain) SKSpriteNode *homeSprite;
 @property (nonatomic) double animationDuration;
 @property (nonatomic) double playerDuration;
@@ -60,15 +46,20 @@
 @property (nonatomic, retain) SKAction *hideAction;
 @property (nonatomic, retain) SKAction *waitAction;
 @property (nonatomic) double waitActionDuration;
-@property (nonatomic, retain) NSMutableDictionary<NSNumber *, SKAction*> *fastMoveCache;
+@property (nonatomic, retain) NSMutableDictionary<NSNumber *, SKAction *> *fastMoveCache;
 @property (nonatomic) int cacheHits;
 @property (nonatomic, copy) NSString *screenPrefix;
 @property (nonatomic) int screenNumber;
+@property (nonatomic) bool normalFlashing;
 
+@property (nonatomic) bool cached_ad_monster;
+@property (nonatomic) int cached_ad_diamonds_nf;
+@property (nonatomic) int cached_ad_diamonds_total;
 
-
+- (void)updateMonster;
+- (void)updateDiamonds;
 - (void)deadPlayer;
-- (void)sunglassesPlayer;
+- (void)playbackPlayer;
 - (void)normalPlayer;
 - (void)flashingPlayer;
 - (void)happyPlayer;

@@ -122,7 +122,7 @@ CGRect IASKCGRectSwap(CGRect rect);
 - (BOOL)isPad {
 	BOOL isPad = NO;
 #if (__IPHONE_OS_VERSION_MAX_ALLOWED >= 30200)
-	isPad = UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad;
+	isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
 #endif
 	return isPad;
 }
@@ -176,7 +176,7 @@ CGRect IASKCGRectSwap(CGRect rect);
 #if __IPHONE_OS_VERSION_MAX_ALLOWED >= 70000
         if (floor(NSFoundationVersionNumber) <= NSFoundationVersionNumber_iOS_6_1)	// don't use etched style on iOS 7
 #endif
-            self.tableView.separatorStyle = UITableViewCellSeparatorStyleSingleLineEtched;
+        self.tableView.separatorStyle = UITableViewCellSeparatorStyleSingleLine;
     }
     UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(singleTapToEndEdit:)];   
     tapGesture.cancelsTouchesInView = NO;
@@ -862,10 +862,16 @@ CGRect IASKCGRectSwap(CGRect rect);
             
             mailViewController.mailComposeDelegate = vc;
             _currentChildViewController = mailViewController;
+#if TARGET_OS_UIKITFORMAC
+            [vc presentViewController:mailViewController animated:YES completion:^{
+                
+            }];
+#else
             UIStatusBarStyle savedStatusBarStyle = [UIApplication sharedApplication].statusBarStyle;
             [vc presentViewController:mailViewController animated:YES completion:^{
-			    [UIApplication sharedApplication].statusBarStyle = savedStatusBarStyle;
+                [UIApplication sharedApplication].statusBarStyle = savedStatusBarStyle;
             }];
+#endif
 			
         } else {
 			IASK_IF_PRE_IOS8

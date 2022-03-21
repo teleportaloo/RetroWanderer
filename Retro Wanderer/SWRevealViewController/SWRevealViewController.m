@@ -27,6 +27,7 @@
 #import <QuartzCore/QuartzCore.h>
 
 #import "SWRevealViewController.h"
+#import "UIWindow+Helper.h"
 
 
 #pragma mark - StatusBar Helper Function
@@ -36,9 +37,14 @@
 static CGFloat statusBarAdjustment( UIView* view )
 {
     CGFloat adjustment = 0.0f;
+    CGRect viewFrame = [view convertRect:view.bounds toView:[UIWindow firstKeyWindow]];
+
+#if !TARGET_OS_UIKITFORMAC
     UIApplication *app = [UIApplication sharedApplication];
-    CGRect viewFrame = [view convertRect:view.bounds toView:[app keyWindow]];
     CGRect statusBarFrame = [app statusBarFrame];
+#else
+    CGRect statusBarFrame = [UIWindow firstKeyWindow].windowScene.statusBarManager.statusBarFrame;
+#endif
     
     if ( CGRectIntersectsRect(viewFrame, statusBarFrame) )
         adjustment = fminf(statusBarFrame.size.width, statusBarFrame.size.height);
@@ -681,7 +687,7 @@ const int FrontViewPositionNone = 0xff;
 
 - (UIViewController *)childViewControllerForStatusBarStyle
 {
-    int positionDif =  _frontViewPosition - FrontViewPositionLeft;
+    long positionDif =  _frontViewPosition - FrontViewPositionLeft;
     
     UIViewController *controller = _frontViewController;
     if ( positionDif > 0 ) controller = _rearViewController;
@@ -1633,7 +1639,8 @@ const int FrontViewPositionNone = 0xff;
     
     if ( [controllerView isKindOfClass:[UIScrollView class]] )
     {
-        BOOL adjust = controller.automaticallyAdjustsScrollViewInsets;
+        UIScrollView *scrollView = (UIScrollView *)controllerView;
+        BOOL adjust = scrollView.contentInsetAdjustmentBehavior;
         
         if ( adjust )
         {
